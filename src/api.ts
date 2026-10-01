@@ -6,7 +6,13 @@ export type CertificationSummary = { slug: string; title: string; description: s
 export type RazorpayOrder = { attemptId: string; razorpayOrderId: string; amountPaise: number; currency: string; keyId: string; recipientName: string; courseName: string }
 export type CertificateDetails = { shortId: string; recipientName: string; certificationSlug: string; courseName: string; score: number; totalQuestions: number; issuedAt: string; status: string; verificationUrl: string; pngUrl: string; pdfUrl: string }
 
-export const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1'
+// Never let a production build fall back to localhost. On Android, a localhost
+// request can trigger Chrome's "access other apps and services" permission.
+const productionApiBase = 'https://skillcertapi.vaionyxsolutions.online/api/v1'
+
+export const apiBase =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD ? productionApiBase : 'http://localhost:8080/api/v1')
 
 export async function loadAssessment(slug: string): Promise<Assessment> {
   const response = await fetch(`${apiBase}/certifications/${slug}/assessment`)

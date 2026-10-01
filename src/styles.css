@@ -22,3 +22,30 @@
 .prep-profile-grid article small{font-size:11px;color:#a6bbd7}.prep-profile-grid article div{gap:2px}
 .get-started-screen{align-items:center;text-align:center;justify-content:center}.get-started-screen .question-prep-status{align-self:stretch;text-align:left;position:absolute;top:110px;left:28px;right:28px}.launch-mark{width:118px;height:118px;display:grid;place-items:center;border:1px solid #2b9de7;border-radius:50%;background:radial-gradient(circle,#0d5686,#071a35 70%);box-shadow:0 0 45px #16b7ef77}.launch-mark svg{width:58px;height:58px;color:#35e4eb}.get-started-screen h1{margin:12px 0 0}.get-started-screen p{font-size:17px}.countdown-button{width:100%;margin-top:24px}.countdown-button:disabled{opacity:1;cursor:default}.get-started-screen>small{color:#9db3d3;font-size:11px;letter-spacing:.12em}
 .quiz-launch{height:100%;min-height:calc(100svh - 66px);display:flex;flex-direction:column;justify-content:center;gap:22px}.quiz-launch .question-prep-status{margin-bottom:auto}.quiz-launch h1{margin:0}.quiz-launch p{font-size:17px}.quiz-launch>small{align-self:center;color:#9db3d3;font-size:11px;letter-spacing:.12em}.countdown-progress{height:6px;width:100%;overflow:hidden;border-radius:99px;background:#173152}.countdown-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#31e5f1,#2b69ff);transition:width 1s linear}
+
+/* Keep form controls reachable above Android and in-app-browser keyboards. */
+@media (max-width:799px) {
+  main {
+    display:block;
+    min-height:100dvh;
+    overflow-x:hidden;
+    overflow-y:auto;
+  }
+
+  .hero {
+    width:100%;
+    min-height:100dvh;
+    height:auto;
+    overflow:visible;
+    padding-bottom:max(32px, env(safe-area-inset-bottom));
+  }
+
+  .name .input,
+  .contact .input {
+    scroll-margin-block:24px;
+  }
+
+  .contact {
+    padding-bottom:max(150px, env(safe-area-inset-bottom));
+  }
+}

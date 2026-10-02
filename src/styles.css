@@ -68,7 +68,7 @@
 
   .course-intro .brand { width:126px!important; margin-bottom:7px; }
   .course-intro-head { padding-top:6px; }
-  .course-intro-head h1 { font-size:clamp(27px,8.7vw,35px); line-height:.98; }
+  .course-intro-head h1 { font-size:clamp(27px,8.7vw,35px); line-height:1.08; }
   .course-intro-head p { margin-top:10px; font-size:clamp(18px,5.5vw,23px); }
   .intro-company-proof { gap:9px; }
   .intro-company-proof>span { font-size:11px; }
@@ -98,7 +98,7 @@
 @media (max-width:799px) and (max-height:720px) {
   .course-intro { padding-top:10px; gap:14px; }
   .course-intro .brand { width:112px!important; }
-  .course-intro-head h1 { font-size:26px; }
+  .course-intro-head h1 { font-size:26px; line-height:1.08; }
   .course-intro-head p { font-size:17px; }
   .intro-company-proof>span { font-size:10px; }
   .intro-certificate { width:88%; }

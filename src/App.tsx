@@ -324,9 +324,9 @@ const companySets = [
 ] as const
 
 const testimonials = [
-  { employer: 'EY', name: 'Ananya Sharma', location: 'Hyderabad', quote: <>“This certificate helped me land my <em>dream job at PhonePe.</em>”</> },
-  { employer: 'Deloitte', name: 'Rohan Mehta', location: 'Pune', quote: <>“It gave my profile the <em>proof recruiters wanted.</em>”</> },
-  { employer: 'KPMG', name: 'Kavya Nair', location: 'Bengaluru', quote: <>“I could share my verified skill <em>in one link.</em>”</> },
+  { employer: 'PhonePe', logo: '/company-logos/phonepe-wordmark.svg', name: 'Ananya Sharma', location: 'Hyderabad', quote: <>“This certificate helped me land my <em>dream job at PhonePe.</em>”</> },
+  { employer: 'CRED', logo: '/company-logos/cred-wordmark.svg', name: 'Rohan Mehta', location: 'Pune', quote: <>“It gave my profile the <em>proof CRED recruiters wanted.</em>”</> },
+  { employer: 'Microsoft', logo: '/company-logos/microsoft-wordmark.svg', name: 'Kavya Nair', location: 'Bengaluru', quote: <>“I could share my verified skill <em>in one link.</em>”</> },
 ]
 
 function CompanyMark({ mark }: { mark: typeof companySets[number][number] }) {
@@ -364,10 +364,12 @@ function CourseIntro({ courseName, onStart }: { courseName: string, onStart: () 
     </div>
     <div className="intro-certificate">
       <img src="/skillcert-certificate-template.png" alt="SkillCert certificate preview"/>
+      <strong className="intro-certificate-name">{testimonial.name}</strong>
+      <strong className="intro-certificate-course">{courseName}</strong>
       <span className="five-minute-badge">Certify your skill <b>in 5 min</b></span>
     </div>
     <article key={testimonialIndex} className="intro-testimonial">
-      <span className="employer-mark">{testimonial.employer}</span>
+      <span className="employer-mark"><img src={testimonial.logo} alt={`${testimonial.employer} logo`}/></span>
       <div>
         <strong>{testimonial.name} <i>·</i> {testimonial.location}</strong>
         <p>{testimonial.quote}</p>

@@ -55,3 +55,55 @@
 @media(min-width:800px){.course-intro{min-height:760px;border:1px solid #174d8a;border-radius:36px;box-shadow:0 30px 100px #0009}.course-intro .brand{align-self:flex-start}.course-intro-head h1{font-size:48px}.intro-certificate{max-width:480px;align-self:center}}
 @media(max-width:799px){.course-intro{width:100%;min-height:100dvh;padding:24px 20px 12px;overflow:visible}.course-intro-head h1{font-size:clamp(35px,10.5vw,47px)}.intro-company{font-size:8px}.intro-company i{font-size:20px}.intro-company b{font-weight:700}.five-minute-badge{right:-7px;width:76px;min-height:76px;font-size:9px}.five-minute-badge b{font-size:15px}.intro-testimonial p{font-size:16px}.intro-start{min-height:60px;font-size:21px}.intro-activity{font-size:12px}.intro-activity b{font-size:17px}}
 .intro-company.microsoft-mark i{width:18px;height:18px}.intro-company.microsoft-mark i b{display:block}.intro-company.linkedin-mark i{display:grid;place-items:center;width:23px;height:23px;border-radius:3px;background:#0a66c2;color:white;font-size:14px}.intro-company.flipkart-mark i{color:#ffcf23;background:#2478d8;border-radius:3px;padding:1px 4px}.intro-company.swiggy-mark i{color:#ff7b1a}.intro-company.zoho-mark i{color:#ec4a3f}.intro-company.infosys-mark i{color:#5db2db;font-family:Georgia,serif}
+
+/* A full first view in Instagram's short mobile viewport. */
+@media (max-width:799px) {
+  .course-intro {
+    height:100dvh;
+    min-height:0;
+    padding:16px 18px 10px;
+    gap:8px;
+    overflow:hidden;
+  }
+
+  .course-intro .brand { width:126px!important; }
+  .course-intro-head h1 { font-size:clamp(27px,8.7vw,35px); line-height:.94; }
+  .course-intro-head p { margin-top:5px; font-size:clamp(18px,5.5vw,23px); }
+  .intro-company-proof { gap:5px; }
+  .intro-company-proof>span { font-size:11px; }
+  .intro-company-row { min-height:25px; gap:4px; }
+  .intro-company { gap:2px; font-size:7px; }
+  .intro-company i { font-size:16px; }
+  .intro-company.meta-mark i { font-size:20px; }
+  .intro-company.linkedin-mark i { width:18px; height:18px; font-size:11px; }
+  .intro-certificate { width:94%; align-self:center; }
+  .intro-certificate img { box-shadow:0 0 0 2px #0b315bcc,0 0 17px #18bff877; }
+  .five-minute-badge { right:-10px; top:-10px; width:62px; min-height:62px; padding:8px 5px; font-size:7px; }
+  .five-minute-badge b { font-size:12px; margin-top:2px; }
+  .intro-testimonial { min-height:52px; width:94%; align-self:center; gap:9px; }
+  .employer-mark { width:50px; height:50px; font-size:14px; border-width:1px; }
+  .intro-testimonial div { gap:2px; }
+  .intro-testimonial strong { font-size:12px; }
+  .intro-testimonial p { font-size:13px; line-height:1.08; }
+  .intro-sticky { gap:5px; padding:7px 0 max(2px, env(safe-area-inset-bottom)); }
+  .intro-start { min-height:48px; font-size:18px; }
+  .intro-start svg { width:20px; }
+  .intro-activity { min-height:26px; font-size:10px; gap:7px; }
+  .intro-activity b { font-size:14px; }
+  .profile-stack i { width:24px; height:24px; font-size:8px; }
+  .location-pin { height:20px; width:20px; }
+}
+
+@media (max-width:799px) and (max-height:720px) {
+  .course-intro { padding-top:10px; gap:5px; }
+  .course-intro .brand { width:112px!important; }
+  .course-intro-head h1 { font-size:26px; }
+  .course-intro-head p { font-size:17px; }
+  .intro-company-proof>span { font-size:10px; }
+  .intro-certificate { width:88%; }
+  .intro-testimonial { min-height:46px; }
+  .employer-mark { width:43px; height:43px; font-size:12px; }
+  .intro-testimonial strong { font-size:11px; }
+  .intro-testimonial p { font-size:12px; }
+  .intro-start { min-height:44px; }
+}

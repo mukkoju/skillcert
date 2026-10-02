@@ -308,10 +308,18 @@ function SiteNav({ onExplore, onHome }: { onExplore?: () => void, onHome?: () =>
 
 const companySets = [
   [
-    ['google-mark', 'G', 'Google'], ['microsoft-mark', 'windows', 'Microsoft'], ['amazon-mark', 'a', 'amazon'], ['meta-mark', '∞', 'Meta'], ['adobe-mark', 'A', 'Adobe'],
+    { label: 'Google', icon: 'https://cdn.simpleicons.org/google/4285F4' },
+    { label: 'Microsoft', icon: 'https://cdn.simpleicons.org/microsoft/7FBA00' },
+    { label: 'Amazon', icon: 'https://cdn.simpleicons.org/amazon/FF9900' },
+    { label: 'Meta', icon: 'https://cdn.simpleicons.org/meta/0081FB' },
+    { label: 'Adobe', icon: 'https://cdn.simpleicons.org/adobe/FF0000' },
   ],
   [
-    ['linkedin-mark', 'in', 'LinkedIn'], ['flipkart-mark', 'F', 'Flipkart'], ['swiggy-mark', 'S', 'Swiggy'], ['zoho-mark', 'Z', 'Zoho'], ['infosys-mark', 'i', 'Infosys'],
+    { label: 'LinkedIn', icon: 'https://cdn.simpleicons.org/linkedin/0A66C2' },
+    { label: 'Flipkart', icon: 'https://cdn.simpleicons.org/flipkart/2874F0' },
+    { label: 'Swiggy', icon: 'https://cdn.simpleicons.org/swiggy/FC8019' },
+    { label: 'Zoho', icon: 'https://cdn.simpleicons.org/zoho/E42527' },
+    { label: 'Infosys', icon: 'https://cdn.simpleicons.org/infosys/007CC3' },
   ],
 ] as const
 
@@ -322,11 +330,7 @@ const testimonials = [
 ]
 
 function CompanyMark({ mark }: { mark: typeof companySets[number][number] }) {
-  const [className, symbol, label] = mark
-  return <span className={`intro-company ${className}`}>
-    {className === 'microsoft-mark' ? <i><b/><b/><b/><b/></i> : <i>{symbol}</i>}
-    <b>{label}</b>
-  </span>
+  return <img className="intro-company-logo" src={mark.icon} alt={mark.label}/>
 }
 
 function CourseIntro({ courseName, onStart }: { courseName: string, onStart: () => void }) {
@@ -353,9 +357,9 @@ function CourseIntro({ courseName, onStart }: { courseName: string, onStart: () 
       <p>Made to help you <b>stand out.</b></p>
     </header>
     <div className="intro-company-proof">
-      <span>Build proof for the world of work</span>
+      <span>Recognised by 500+ Top Companies</span>
       <div key={companySet} className="intro-company-row">
-        {companySets[companySet].map(mark => <CompanyMark key={mark[2]} mark={mark}/>) }
+        {companySets[companySet].map(mark => <CompanyMark key={mark.label} mark={mark}/>) }
       </div>
     </div>
     <div className="intro-certificate">

@@ -364,8 +364,8 @@ function CourseIntro({ courseName, onStart }: { courseName: string, onStart: () 
     </div>
     <div className="intro-certificate">
       <img src="/skillcert-certificate-template.png" alt="SkillCert certificate preview"/>
-      <strong className="intro-certificate-name">{testimonial.name}</strong>
-      <strong className="intro-certificate-course">{courseName}</strong>
+      <strong className="intro-certificate-name">Your name</strong>
+      <strong className="intro-certificate-course">Your course</strong>
       <span className="five-minute-badge">Certify your skill <b>in 5 min</b></span>
     </div>
     <article key={testimonialIndex} className="intro-testimonial">

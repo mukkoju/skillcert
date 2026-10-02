@@ -66,9 +66,10 @@
     overflow:hidden;
   }
 
-  .course-intro .brand { width:126px!important; }
-  .course-intro-head h1 { font-size:clamp(27px,8.7vw,35px); line-height:.94; }
-  .course-intro-head p { margin-top:5px; font-size:clamp(18px,5.5vw,23px); }
+  .course-intro .brand { width:126px!important; margin-bottom:6px; }
+  .course-intro-head { padding-top:4px; }
+  .course-intro-head h1 { font-size:clamp(27px,8.7vw,35px); line-height:.98; }
+  .course-intro-head p { margin-top:10px; font-size:clamp(18px,5.5vw,23px); }
   .intro-company-proof { gap:5px; }
   .intro-company-proof>span { font-size:11px; }
   .intro-company-row { min-height:25px; gap:4px; }
@@ -85,7 +86,7 @@
   .intro-testimonial div { gap:2px; }
   .intro-testimonial strong { font-size:12px; }
   .intro-testimonial p { font-size:13px; line-height:1.08; }
-  .intro-sticky { gap:5px; padding:7px 0 max(2px, env(safe-area-inset-bottom)); }
+  .intro-sticky { margin-top:6px; gap:5px; padding:7px 0 max(2px, env(safe-area-inset-bottom)); }
   .intro-start { min-height:48px; font-size:18px; }
   .intro-start svg { width:20px; }
   .intro-activity { min-height:26px; font-size:10px; gap:7px; }

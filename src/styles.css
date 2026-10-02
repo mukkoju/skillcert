@@ -55,7 +55,7 @@
 @media(min-width:800px){.course-intro{min-height:760px;border:1px solid #174d8a;border-radius:36px;box-shadow:0 30px 100px #0009}.course-intro .brand{align-self:flex-start}.course-intro-head h1{font-size:48px}.intro-certificate{max-width:480px;align-self:center}}
 @media(max-width:799px){.course-intro{width:100%;min-height:100dvh;padding:24px 20px 12px;overflow:visible}.course-intro-head h1{font-size:clamp(35px,10.5vw,47px)}.intro-company{font-size:8px}.intro-company i{font-size:20px}.intro-company b{font-weight:700}.five-minute-badge{right:-7px;width:76px;min-height:76px;font-size:9px}.five-minute-badge b{font-size:15px}.intro-testimonial p{font-size:16px}.intro-start{min-height:60px;font-size:21px}.intro-activity{font-size:12px}.intro-activity b{font-size:17px}}
 .intro-company.microsoft-mark i{width:18px;height:18px}.intro-company.microsoft-mark i b{display:block}.intro-company.linkedin-mark i{display:grid;place-items:center;width:23px;height:23px;border-radius:3px;background:#0a66c2;color:white;font-size:14px}.intro-company.flipkart-mark i{color:#ffcf23;background:#2478d8;border-radius:3px;padding:1px 4px}.intro-company.swiggy-mark i{color:#ff7b1a}.intro-company.zoho-mark i{color:#ec4a3f}.intro-company.infosys-mark i{color:#5db2db;font-family:Georgia,serif}
-.intro-company-logo{display:block;flex:0 1 19%;width:auto;height:clamp(20px,5.6vw,31px);max-width:19%;object-fit:contain;filter:drop-shadow(0 1px 4px #0008)}
+.intro-company-logo{display:block;flex:0 0 18%;width:18%;height:clamp(20px,5.6vw,31px);object-fit:contain;filter:drop-shadow(0 1px 4px #0008)}
 
 /* A full first view in Instagram's short mobile viewport. */
 @media (max-width:799px) {

@@ -308,18 +308,18 @@ function SiteNav({ onExplore, onHome }: { onExplore?: () => void, onHome?: () =>
 
 const companySets = [
   [
-    { label: 'Google', icon: 'https://cdn.simpleicons.org/google/4285F4' },
-    { label: 'Microsoft', icon: 'https://cdn.simpleicons.org/microsoft/7FBA00' },
-    { label: 'Amazon', icon: 'https://cdn.simpleicons.org/amazon/FF9900' },
-    { label: 'Meta', icon: 'https://cdn.simpleicons.org/meta/0081FB' },
-    { label: 'Adobe', icon: 'https://cdn.simpleicons.org/adobe/FF0000' },
+    { label: 'PhonePe', icon: '/company-logos/phonepe-wordmark.svg' },
+    { label: 'CRED', icon: '/company-logos/cred-wordmark.svg' },
+    { label: 'Zepto', icon: '/company-logos/zepto-wordmark.svg' },
+    { label: 'OYO', icon: '/company-logos/oyo-wordmark.svg' },
+    { label: 'Meesho', icon: '/company-logos/meesho-wordmark.svg' },
   ],
   [
-    { label: 'LinkedIn', icon: 'https://cdn.simpleicons.org/linkedin/0A66C2' },
-    { label: 'Flipkart', icon: 'https://cdn.simpleicons.org/flipkart/2874F0' },
-    { label: 'Swiggy', icon: 'https://cdn.simpleicons.org/swiggy/FC8019' },
-    { label: 'Zoho', icon: 'https://cdn.simpleicons.org/zoho/E42527' },
-    { label: 'Infosys', icon: 'https://cdn.simpleicons.org/infosys/007CC3' },
+    { label: 'Dream11', icon: '/company-logos/dream11-wordmark.svg' },
+    { label: 'Rapido', icon: '/company-logos/rapido-wordmark.svg' },
+    { label: 'Flipkart', icon: '/company-logos/flipkart-wordmark.svg' },
+    { label: 'Amazon', icon: '/company-logos/amazon-wordmark.svg' },
+    { label: 'Microsoft', icon: '/company-logos/microsoft-wordmark.svg' },
   ],
 ] as const
 

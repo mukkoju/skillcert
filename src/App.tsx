@@ -338,7 +338,7 @@ function CourseIntro({ courseName, onStart }: { courseName: string, onStart: () 
   const [testimonialIndex, setTestimonialIndex] = useState(0)
   const [activityIndex, setActivityIndex] = useState(0)
   useEffect(() => {
-    const timer = window.setInterval(() => setCompanySet(current => (current + 1) % companySets.length), 1000)
+    const timer = window.setInterval(() => setCompanySet(current => (current + 1) % companySets.length), 3000)
     return () => window.clearInterval(timer)
   }, [])
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, submitAttempt, verifyRazorpayPayment, type Assessment, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
 import { openRazorpayCheckout } from './razorpay'
 
-type Step = 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'success' | 'failed'
+type Step = 'intro' | 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'success' | 'failed'
 
 const variants = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -18 } }
 
@@ -14,7 +14,7 @@ function QuestionPreparationStatus({ courseName }: { courseName: string }) { ret
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
-  const [step, setStep] = useState<Step>('loading')
+  const [step, setStep] = useState<Step>(() => window.location.pathname === '/cloud-foundations' ? 'intro' : 'loading')
   const [name, setName] = useState('')
   const [question, setQuestion] = useState(0)
   const [score, setScore] = useState(0)
@@ -56,7 +56,7 @@ export default function App() {
     audioContext.current ??= new AudioContext()
     return audioContext.current
   }
-  const navigate = (nextPath: string) => { window.history.pushState({}, '', nextPath); setPath(nextPath); setStep('loading') }
+  const navigate = (nextPath: string) => { window.history.pushState({}, '', nextPath); setPath(nextPath); setStep(nextPath === '/cloud-foundations' ? 'intro' : 'loading') }
   const startPreparation = () => {
     if (!name.trim()) { setFormError('Enter the name you want printed on your certificate.'); return }
     setName(name.trim())
@@ -281,6 +281,7 @@ export default function App() {
   }
 
   const content: Record<Step, React.ReactNode> = {
+    intro: <CourseIntro onStart={() => setStep('loading')}/>,
     loading: <motion.section {...variants} className="hero loading"><Brand/><div className="orbit" style={{ '--progress': `${loadingProgress * 3.6}deg` } as CSSProperties}><span>{loadingProgress}%</span><small>PREPARING</small></div><h1>Preparing your <em>{assessment?.title ?? 'Cloud Foundations'}</em> certificate</h1><p>A short challenge. A verifiable outcome.</p><div className="credential-ghost"><Award/></div></motion.section>,
     name: <motion.section {...variants} className="hero name"><Brand/><div className="eyebrow">LEARN · ASSESS · GET CERTIFIED</div><h1>Who is this <em>certificate</em> for?</h1><p>Use the name you want shown on your certificate.</p><label className="input"><Award size={22}/><input value={name} maxLength={30} placeholder="Your Full name (Ex: Rahul Singh)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setName(e.target.value); setFormError('') }} aria-label="Name on certificate" autoComplete="name"/></label>{formError && <small className="form-error">{formError}</small>}<Button onClick={startPreparation}>Continue</Button><div className="achievement-promise"><strong>Your certificate can help you <em>stand out to 500+ companies, including</em></strong><div className="career-logos"><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span><span className="adobe-mark"><i>A</i>Adobe</span></div></div></motion.section>,
     'preparing-companies': <motion.section {...variants} className="hero preparation-screen"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div className="prep-copy"><div className="eyebrow">YOUR SKILL, MADE VISIBLE</div><h1>Carry your proof into your <em>next opportunity.</em></h1><p>A SkillCert certificate is designed to be simple to share and easy to verify.</p></div><div className="prep-company-grid"><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span><span className="adobe-mark"><i>A</i>Adobe</span><span className="more-mark">+500<br/><small>companies</small></span></div><small className="prep-footnote">Your questions are being selected now.</small></motion.section>,
@@ -298,6 +299,78 @@ export default function App() {
 }
 
 function SiteNav({ onExplore, onHome }: { onExplore?: () => void, onHome?: () => void }) { return <nav className="site-nav"><button className="logo-button" onClick={onHome}><Brand/></button><div><button onClick={onExplore}>Explore skills</button><button>How it works</button><button>Verify credential</button>{onExplore && <button className="nav-cta" onClick={onExplore}>Start assessment</button>}</div></nav> }
+
+const companySets = [
+  [
+    ['google-mark', 'G', 'Google'], ['microsoft-mark', 'windows', 'Microsoft'], ['amazon-mark', 'a', 'amazon'], ['meta-mark', '∞', 'Meta'], ['adobe-mark', 'A', 'Adobe'],
+  ],
+  [
+    ['linkedin-mark', 'in', 'LinkedIn'], ['flipkart-mark', 'F', 'Flipkart'], ['swiggy-mark', 'S', 'Swiggy'], ['zoho-mark', 'Z', 'Zoho'], ['infosys-mark', 'i', 'Infosys'],
+  ],
+] as const
+
+const testimonials = [
+  { employer: 'EY', name: 'Ananya Sharma', location: 'Hyderabad', quote: <>“This certificate helped me land my <em>dream job at PhonePe.</em>”</> },
+  { employer: 'Deloitte', name: 'Rohan Mehta', location: 'Pune', quote: <>“It gave my profile the <em>proof recruiters wanted.</em>”</> },
+  { employer: 'KPMG', name: 'Kavya Nair', location: 'Bengaluru', quote: <>“I could share my verified skill <em>in one link.</em>”</> },
+]
+
+function CompanyMark({ mark }: { mark: typeof companySets[number][number] }) {
+  const [className, symbol, label] = mark
+  return <span className={`intro-company ${className}`}>
+    {className === 'microsoft-mark' ? <i><b/><b/><b/><b/></i> : <i>{symbol}</i>}
+    <b>{label}</b>
+  </span>
+}
+
+function CourseIntro({ onStart }: { onStart: () => void }) {
+  const [companySet, setCompanySet] = useState(0)
+  const [testimonialIndex, setTestimonialIndex] = useState(0)
+  const [activityIndex, setActivityIndex] = useState(0)
+  useEffect(() => {
+    const timer = window.setInterval(() => setCompanySet(current => (current + 1) % companySets.length), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+  useEffect(() => {
+    const timer = window.setInterval(() => setTestimonialIndex(current => (current + 1) % testimonials.length), 3300)
+    return () => window.clearInterval(timer)
+  }, [])
+  useEffect(() => {
+    const timer = window.setInterval(() => setActivityIndex(current => (current + 1) % 2), 2800)
+    return () => window.clearInterval(timer)
+  }, [])
+  const testimonial = testimonials[testimonialIndex]
+  return <motion.section {...variants} className="course-intro">
+    <Brand/>
+    <header className="course-intro-head">
+      <h1>Get your <em>School Administration Certificate</em></h1>
+      <p>Made to help you <b>stand out.</b></p>
+    </header>
+    <div className="intro-company-proof">
+      <span>Build proof for the world of work</span>
+      <div key={companySet} className="intro-company-row">
+        {companySets[companySet].map(mark => <CompanyMark key={mark[2]} mark={mark}/>) }
+      </div>
+    </div>
+    <div className="intro-certificate">
+      <img src="/skillcert-certificate-template.png" alt="SkillCert certificate preview"/>
+      <span className="five-minute-badge">Certify your skill <b>in 5 min</b></span>
+    </div>
+    <article key={testimonialIndex} className="intro-testimonial">
+      <span className="employer-mark">{testimonial.employer}</span>
+      <div>
+        <strong>{testimonial.name} <i>·</i> {testimonial.location}</strong>
+        <p>{testimonial.quote}</p>
+      </div>
+    </article>
+    <footer className="intro-sticky">
+      <button className="intro-start" onClick={onStart}>Get started <ChevronRight size={26}/></button>
+      <div key={activityIndex} className="intro-activity">
+        {activityIndex === 0 ? <><span className="profile-stack"><i>R</i><i>A</i><i>K</i></span><span><b>797</b> certified today in under 10 min</span></> : <><span className="location-pin">●</span><span><b>300+</b> from Hyderabad scored 60%+ today. <em>Check yours.</em></span></>}
+      </div>
+    </footer>
+  </motion.section>
+}
 
 const certificateShowcase = [
   { name: 'Your Name', course: 'Cloud Foundations' },

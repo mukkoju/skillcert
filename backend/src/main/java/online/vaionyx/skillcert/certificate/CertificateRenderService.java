@@ -30,6 +30,11 @@ import org.springframework.stereotype.Service;
 public class CertificateRenderService {
   private static final int WIDTH = 3508;
   private static final int HEIGHT = 2480;
+  // Render at half-resolution so certificate PDFs are reliable on Render's small JVM heap.
+  // Coordinates remain based on the locked 3508×2480 master via the graphics transform.
+  private static final double RENDER_SCALE = 0.5;
+  private static final int OUTPUT_WIDTH = (int) (WIDTH * RENDER_SCALE);
+  private static final int OUTPUT_HEIGHT = (int) (HEIGHT * RENDER_SCALE);
   private static final Color NAVY = new Color(5, 27, 82);
   private static final Color SUPPORTING_NAVY = new Color(31, 63, 126);
   private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd MMMM uuuu");
@@ -39,6 +44,7 @@ public class CertificateRenderService {
     try {
       BufferedImage canvas = loadMaster();
       Graphics2D graphics = canvas.createGraphics();
+      graphics.scale(RENDER_SCALE, RENDER_SCALE);
       graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
       graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
       graphics.setColor(NAVY);
@@ -81,8 +87,11 @@ public class CertificateRenderService {
     try (ByteArrayInputStream stream = new ByteArrayInputStream(new ClassPathResource("certificate/skillcert-a4-static-master.png").getInputStream().readAllBytes())) {
       BufferedImage master = ImageIO.read(stream);
       if (master == null || master.getWidth() != WIDTH || master.getHeight() != HEIGHT) throw new IllegalStateException("Certificate master must be 3508 x 2480 pixels");
-      BufferedImage copy = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
-      Graphics2D graphics = copy.createGraphics(); graphics.drawImage(master, 0, 0, null); graphics.dispose();
+      BufferedImage copy = new BufferedImage(OUTPUT_WIDTH, OUTPUT_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+      Graphics2D graphics = copy.createGraphics();
+      graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+      graphics.drawImage(master, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT, null);
+      graphics.dispose();
       return copy;
     }
   }

@@ -15,6 +15,7 @@ import javax.crypto.spec.SecretKeySpec;
 import online.vaionyx.skillcert.certificate.CertificateDtos;
 import online.vaionyx.skillcert.certificate.CertificateIssuanceService;
 import online.vaionyx.skillcert.certificate.CertificateEmailService;
+import online.vaionyx.skillcert.certificate.CertificateStorageService;
 import online.vaionyx.skillcert.certification.Attempt;
 import online.vaionyx.skillcert.certification.AttemptRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,17 +31,18 @@ public class RazorpayPaymentService {
   private final PaymentRepository payments;
   private final CertificateIssuanceService issuance;
   private final CertificateEmailService email;
+  private final CertificateStorageService storage;
   private final ObjectMapper json;
   private final HttpClient http = HttpClient.newHttpClient();
   private final String keyId;
   private final String keySecret;
   private final String webhookSecret;
 
-  public RazorpayPaymentService(AttemptRepository attempts, PaymentRepository payments, CertificateIssuanceService issuance, CertificateEmailService email, ObjectMapper json,
+  public RazorpayPaymentService(AttemptRepository attempts, PaymentRepository payments, CertificateIssuanceService issuance, CertificateEmailService email, CertificateStorageService storage, ObjectMapper json,
       @Value("${app.razorpay-key-id:}") String keyId,
       @Value("${app.razorpay-key-secret:}") String keySecret,
       @Value("${app.razorpay-webhook-secret:}") String webhookSecret) {
-    this.attempts = attempts; this.payments = payments; this.issuance = issuance; this.email = email; this.json = json;
+    this.attempts = attempts; this.payments = payments; this.issuance = issuance; this.email = email; this.storage = storage; this.json = json;
     this.keyId = keyId; this.keySecret = keySecret; this.webhookSecret = webhookSecret;
   }
 
@@ -74,6 +76,7 @@ public class RazorpayPaymentService {
     }
     payment.markCaptured(request.razorpayPaymentId());
     CertificateDtos.CertificateDetails certificate = issuance.issueAfterPayment(request.attemptId());
+    storage.store(certificate.shortId());
     email.deliver(certificate.shortId());
     return certificate;
   }
@@ -91,6 +94,7 @@ public class RazorpayPaymentService {
       if (payment == null || "CAPTURED".equals(payment.getStatus())) return;
       payment.markCaptured(entity.path("id").asText());
       CertificateDtos.CertificateDetails certificate = issuance.issueAfterPayment(payment.getAttempt().getId());
+      storage.store(certificate.shortId());
       email.deliver(certificate.shortId());
     } catch (ResponseStatusException exception) {
       throw exception;

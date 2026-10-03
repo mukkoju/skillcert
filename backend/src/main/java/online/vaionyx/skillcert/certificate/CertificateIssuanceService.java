@@ -20,14 +20,17 @@ public class CertificateIssuanceService {
   private final IssuedCertificateRepository certificates;
   private final SecureRandom random = new SecureRandom();
   private final String verificationBaseUrl;
+  private final String r2PublicBaseUrl;
 
   public CertificateIssuanceService(
       AttemptRepository attempts,
       IssuedCertificateRepository certificates,
-      @Value("${app.certificate-verification-base-url:https://skillcert.vaionyxsolutions.online/verify/}") String verificationBaseUrl) {
+      @Value("${app.certificate-verification-base-url:https://skillcert.vaionyxsolutions.online/verify/}") String verificationBaseUrl,
+      @Value("${app.r2-public-base-url:}") String r2PublicBaseUrl) {
     this.attempts = attempts;
     this.certificates = certificates;
     this.verificationBaseUrl = verificationBaseUrl.endsWith("/") ? verificationBaseUrl : verificationBaseUrl + "/";
+    this.r2PublicBaseUrl = r2PublicBaseUrl.endsWith("/") ? r2PublicBaseUrl.substring(0, r2PublicBaseUrl.length() - 1) : r2PublicBaseUrl;
   }
 
   @Transactional
@@ -74,11 +77,13 @@ public class CertificateIssuanceService {
 
   private CertificateDtos.CertificateDetails details(IssuedCertificate certificate) {
     String apiBase = "/api/v1/certificates/issued/" + certificate.getShortId();
+    String pngUrl = certificate.getPngObjectKey() == null || r2PublicBaseUrl.isBlank() ? apiBase + "/certificate.png" : r2PublicBaseUrl + "/" + certificate.getPngObjectKey();
+    String pdfUrl = certificate.getPdfObjectKey() == null || r2PublicBaseUrl.isBlank() ? apiBase + "/certificate.pdf" : r2PublicBaseUrl + "/" + certificate.getPdfObjectKey();
     return new CertificateDtos.CertificateDetails(
         certificate.getShortId(), certificate.getRecipientName(), certificate.getCertification().getSlug(),
         certificate.getCertification().getTitle(), certificate.getScore(), certificate.getTotalQuestions(),
         certificate.getIssuedAt(), certificate.getStatus(), verificationBaseUrl + certificate.getShortId(),
-        apiBase + "/certificate.png", apiBase + "/certificate.pdf");
+        pngUrl, pdfUrl);
   }
 
   private String nextShortId() {

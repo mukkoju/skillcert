@@ -13,14 +13,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class IssuedCertificateController {
   private final CertificateIssuanceService issuance;
   private final CertificateRenderService renderer;
+  private final CertificateStorageService storage;
 
-  public IssuedCertificateController(CertificateIssuanceService issuance, CertificateRenderService renderer) {
+  public IssuedCertificateController(CertificateIssuanceService issuance, CertificateRenderService renderer, CertificateStorageService storage) {
     this.issuance = issuance;
     this.renderer = renderer;
+    this.storage = storage;
   }
 
   @GetMapping("/verify/{shortId}")
   public CertificateDtos.CertificateDetails verify(@PathVariable String shortId) {
+    storage.store(shortId);
     return issuance.find(shortId);
   }
 

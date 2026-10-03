@@ -27,6 +27,8 @@ public class IssuedCertificate {
   @Column(nullable = false) private String status;
   @Column(name = "issued_at", nullable = false) private Instant issuedAt;
   @Column(name = "email_sent_at") private Instant emailSentAt;
+  @Column(name = "png_object_key") private String pngObjectKey;
+  @Column(name = "pdf_object_key") private String pdfObjectKey;
 
   protected IssuedCertificate() {}
 
@@ -51,5 +53,8 @@ public class IssuedCertificate {
   public String getStatus() { return status; }
   public Instant getIssuedAt() { return issuedAt; }
   public Instant getEmailSentAt() { return emailSentAt; }
+  public String getPngObjectKey() { return pngObjectKey; }
+  public String getPdfObjectKey() { return pdfObjectKey; }
   public void markEmailSent() { this.emailSentAt = Instant.now(); }
+  public void markStored(String pngObjectKey, String pdfObjectKey) { this.pngObjectKey = pngObjectKey; this.pdfObjectKey = pdfObjectKey; }
 }

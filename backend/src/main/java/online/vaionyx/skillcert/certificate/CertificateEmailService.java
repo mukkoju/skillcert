@@ -19,7 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CertificateEmailService {
   private static final URI RESEND_EMAILS = URI.create("https://api.resend.com/emails");
   private final IssuedCertificateRepository certificates;
-  private final CertificateRenderService renderer;
+  private final CertificateStorageService storage;
   private final ObjectMapper json;
   private final String apiKey;
   private final String fromEmail;
@@ -27,12 +27,12 @@ public class CertificateEmailService {
 
   public CertificateEmailService(
       IssuedCertificateRepository certificates,
-      CertificateRenderService renderer,
+      CertificateStorageService storage,
       ObjectMapper json,
       @Value("${app.resend-api-key:}") String apiKey,
       @Value("${app.certificate-from-email:}") String fromEmail) {
     this.certificates = certificates;
-    this.renderer = renderer;
+    this.storage = storage;
     this.json = json;
     this.apiKey = apiKey;
     this.fromEmail = fromEmail;
@@ -50,12 +50,8 @@ public class CertificateEmailService {
       throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Certificate email is not configured");
     }
 
-    CertificateRequest request = new CertificateRequest(
-        certificate.getRecipientName(), certificate.getCertification().getTitle(), certificate.getShortId(),
-        certificate.getIssuedAt().atZone(java.time.ZoneOffset.UTC).toLocalDate(),
-        "https://skillcert.vaionyxsolutions.online/verify/" + certificate.getShortId());
-    byte[] pdf = renderer.renderPdf(request);
-    send(certificate, pdf, request.verificationUrl());
+    byte[] pdf = storage.loadPdf(certificate.getShortId());
+    send(certificate, pdf, "https://skillcert.vaionyxsolutions.online/verify/" + certificate.getShortId());
     certificate.markEmailSent();
   }
 

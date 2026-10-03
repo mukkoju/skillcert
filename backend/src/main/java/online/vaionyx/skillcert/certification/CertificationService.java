@@ -14,7 +14,7 @@ public class CertificationService {
   public List<CertificationSummary> list() { return certifications.findByPublishedTrueOrderByTitleAsc().stream().map(this::summary).toList(); }
   public Assessment assessment(String slug) {
     Certification certification = active(slug); List<Question> questionList = questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId());
-    return new Assessment(certification.getSlug(), certification.getTitle(), certification.getQuestionCount(), certification.getPassingScore(), questionList.stream().map(q -> new AssessmentQuestion(q.getId(), q.getPrompt(), q.getTheory(), options.findByQuestionIdOrderByPositionAsc(q.getId()).stream().map(o -> new Option(o.getId(), o.getLabel())).toList())).toList());
+    return new Assessment(certification.getSlug(), certification.getTitle(), certification.getQuestionCount(), certification.getPassingScore(), questionList.stream().map(q -> new AssessmentQuestion(q.getId(), q.getPrompt(), q.getTheory(), q.getTopic(), q.getDifficulty(), q.getAskedByCompany(), q.getCodeSnippet(), options.findByQuestionIdOrderByPositionAsc(q.getId()).stream().map(o -> new Option(o.getId(), o.getLabel())).toList())).toList());
   }
   public AttemptResult submit(String slug, SubmitAttempt request) {
     Certification certification = active(slug); Map<UUID, UUID> supplied = new HashMap<>(); request.answers().forEach(a -> supplied.put(a.questionId(), a.optionId()));
@@ -30,5 +30,5 @@ public class CertificationService {
     attempt.setContactDetails(request.email().trim().toLowerCase(Locale.ROOT), request.mobile().trim());
   }
   private Certification active(String slug) { return certifications.findBySlugAndPublishedTrue(slug).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found")); }
-  private CertificationSummary summary(Certification c) { return new CertificationSummary(c.getSlug(),c.getTitle(),c.getDescription(),c.getDurationMinutes(),c.getQuestionCount(),c.getPassingScore(),c.getPricePaise()); }
+  private CertificationSummary summary(Certification c) { return new CertificationSummary(c.getSlug(),c.getTitle(),c.getDescription(),c.getDurationMinutes(),c.getQuestionCount(),c.getPassingScore(),c.getPricePaise(),c.getCategory()); }
 }

@@ -14,5 +14,6 @@ public class Certification {
   @Column(nullable=false) private int passingScore;
   @Column(nullable=false) private int pricePaise;
   @Column(nullable=false) private boolean published;
-  public UUID getId(){return id;} public String getSlug(){return slug;} public String getTitle(){return title;} public String getDescription(){return description;} public int getDurationMinutes(){return durationMinutes;} public int getQuestionCount(){return questionCount;} public int getPassingScore(){return passingScore;} public int getPricePaise(){return pricePaise;} public boolean isPublished(){return published;}
+  @Column(nullable=false) private String category;
+  public UUID getId(){return id;} public String getSlug(){return slug;} public String getTitle(){return title;} public String getDescription(){return description;} public int getDurationMinutes(){return durationMinutes;} public int getQuestionCount(){return questionCount;} public int getPassingScore(){return passingScore;} public int getPricePaise(){return pricePaise;} public boolean isPublished(){return published;} public String getCategory(){return category;}
 }

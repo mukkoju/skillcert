@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, BookOpen, Brain, Check, ChevronRight, Clock3, Cloud, Code2, Database, LoaderCircle, LockKeyhole, Mail, Megaphone, Palette, Search, ShieldCheck, Volume2, VolumeX, Workflow, X, Zap } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, loadIssuedCertificate, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
+import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, loadIssuedCertificate, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AssessmentQuestion, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
 import { openRazorpayCheckout } from './razorpay'
 
 type Step = 'intro' | 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'payment-processing' | 'success' | 'failed'
@@ -11,6 +11,8 @@ const variants = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }
 function Brand() { return <div className="brand"><img src="/skillcert-logo.png" alt="SkillCert by VAIONYX"/></div> }
 function Button({ children, onClick, secondary = false }: { children: React.ReactNode, onClick?: () => void, secondary?: boolean }) { return <button className={`button ${secondary ? 'secondary' : ''}`} onClick={onClick}>{children}<ChevronRight size={22}/></button> }
 function QuestionPreparationStatus({ courseName }: { courseName: string }) { return <div className="question-prep-status"><i/><span>Preparing short questions for <b>{courseName}</b></span></div> }
+function QuestionTags({ question }: { question: AssessmentQuestion }) { return <div className="question-tags"><span>{question.topic}</span><span>{question.difficulty}</span>{question.askedByCompany ? <span>Asked by {question.askedByCompany}</span> : <span>Industry-style practice</span>}</div> }
+function QuestionCode({ code }: { code: string | null }) { return code ? <pre className="question-code"><code>{code}</code></pre> : null }
 
 function CertificateVerification({ shortId }: { shortId: string }) {
   const [certificate, setCertificate] = useState<CertificateDetails | null>(null)
@@ -28,7 +30,7 @@ function CertificateVerification({ shortId }: { shortId: string }) {
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
-  const [step, setStep] = useState<Step>(() => window.location.pathname === '/cloud-foundations' ? 'intro' : 'loading')
+  const [step, setStep] = useState<Step>(() => /^\/(?!assessments$|verify\/|$)[^/]+$/.test(window.location.pathname) ? 'intro' : 'loading')
   const [name, setName] = useState('')
   const [question, setQuestion] = useState(0)
   const [score, setScore] = useState(0)
@@ -50,6 +52,8 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [mobile, setMobile] = useState('')
   const [formError, setFormError] = useState('')
+  const routeSlug = path.match(/^\/([^/]+)$/)?.[1]
+  const courseSlug = routeSlug && routeSlug !== 'assessments' ? routeSlug : undefined
   const audioContext = useRef<AudioContext | null>(null)
   const quizMusic = useRef<HTMLAudioElement | null>(null)
   const formScrollTimer = useRef<number | null>(null)
@@ -71,7 +75,7 @@ export default function App() {
     audioContext.current ??= new AudioContext()
     return audioContext.current
   }
-  const navigate = (nextPath: string) => { window.history.pushState({}, '', nextPath); setPath(nextPath); setStep(nextPath === '/cloud-foundations' ? 'intro' : 'loading') }
+  const navigate = (nextPath: string) => { window.history.pushState({}, '', nextPath); setAssessment(null); setPath(nextPath); setStep(/^\/(?!assessments$|verify\/|$)[^/]+$/.test(new URL(nextPath, window.location.origin).pathname) ? 'intro' : 'loading') }
   const startPreparation = () => {
     if (!name.trim()) { setFormError('Enter the name you want printed on your certificate.'); return }
     setName(name.trim())
@@ -86,7 +90,7 @@ export default function App() {
     quizMusic.current = music
     void music.play().catch(() => undefined)
     // Refresh once more at the user action, so the quiz never begins without questions.
-    void loadAssessment('cloud-foundations')
+    void loadAssessment(courseSlug ?? 'cloud-foundations')
       .then(setAssessment)
       .catch((error: Error) => setQuizError(error.message))
     setShowQuizLaunch(true)
@@ -157,7 +161,7 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (step !== 'loading' || path !== '/cloud-foundations') return
+    if (step !== 'loading' || !courseSlug) return
 
     const minimumLoadingTime = 2400
     const maximumLoadingTime = 3000
@@ -186,7 +190,7 @@ export default function App() {
     // A slow or unavailable local API must never leave the visitor on a stuck screen.
     const maximumTimer = window.setTimeout(complete, maximumLoadingTime)
 
-    loadAssessment('cloud-foundations')
+    loadAssessment(courseSlug)
       // Keep a slow response even after the visual loader moves to the next screen.
       .then((loadedAssessment) => { setAssessment(loadedAssessment); if (!cancelled) complete() })
       .catch((error: Error) => { setQuizError(error.message); if (!cancelled) complete() })
@@ -197,14 +201,14 @@ export default function App() {
       window.clearTimeout(maximumTimer)
       if (completionTimer) window.clearTimeout(completionTimer)
     }
-  }, [path, step])
+  }, [courseSlug, path, step])
   useEffect(() => { loadCertifications().then(setCatalogue).catch(() => undefined) }, [])
   useEffect(() => {
     if (step !== 'intro' || assessment) return
     let cancelled = false
-    loadAssessment('cloud-foundations').then(loaded => { if (!cancelled) setAssessment(loaded) }).catch(() => undefined)
+    loadAssessment(courseSlug ?? 'cloud-foundations').then(loaded => { if (!cancelled) setAssessment(loaded) }).catch(() => undefined)
     return () => { cancelled = true }
-  }, [assessment, step])
+  }, [assessment, courseSlug, step])
   useEffect(() => {
     if (step !== 'preparing-companies' && step !== 'preparing-stories') return
     if (step === 'preparing-stories' && !assessment) return
@@ -216,11 +220,11 @@ export default function App() {
     if (step !== 'quiz' || assessment) return
     let cancelled = false
     setQuizError(null)
-    loadAssessment('cloud-foundations')
+    loadAssessment(courseSlug ?? 'cloud-foundations')
       .then(loadedAssessment => { if (!cancelled) setAssessment(loadedAssessment) })
       .catch((error: Error) => { if (!cancelled) setQuizError(error.message) })
     return () => { cancelled = true }
-  }, [assessment, step])
+  }, [assessment, courseSlug, step])
   useEffect(() => {
     if (step !== 'quiz' || !showQuizLaunch) return
     setStartCountdown(3)
@@ -317,7 +321,7 @@ export default function App() {
     name: <motion.section {...variants} className="hero name"><Brand/><div className="eyebrow">LEARN · ASSESS · GET CERTIFIED</div><h1>Who is this <em>certificate</em> for?</h1><p>Use the name you want shown on your certificate.</p><label className="input"><Award size={22}/><input value={name} maxLength={30} placeholder="Your Full name (Ex: Rahul Singh)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setName(e.target.value); setFormError('') }} aria-label="Name on certificate" autoComplete="name"/></label>{formError && <small className="form-error">{formError}</small>}<Button onClick={startPreparation}>Continue</Button><div className="achievement-promise"><strong>Your certificate can help you <em>stand out to 500+ companies, including</em></strong><div className="career-logos"><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span><span className="adobe-mark"><i>A</i>Adobe</span></div></div></motion.section>,
     'preparing-companies': <motion.section {...variants} className="hero preparation-screen"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div className="prep-copy"><div className="eyebrow">YOUR SKILL, MADE VISIBLE</div><h1>Carry your proof into your <em>next opportunity.</em></h1><p>A SkillCert certificate is designed to be simple to share and easy to verify.</p></div><div className="prep-company-grid"><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span><span className="adobe-mark"><i>A</i>Adobe</span><span className="more-mark">+500<br/><small>companies</small></span></div><small className="prep-footnote">Your questions are being selected now.</small></motion.section>,
     'preparing-stories': <motion.section {...variants} className="hero preparation-screen"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div className="prep-copy"><div className="eyebrow">CAREER MOMENTUM STARTS SMALL</div><h1>One assessment. A stronger <em>next step.</em></h1><p>Focused practice today can make you more confident for tomorrow's roles.</p></div><div className="prep-profile-grid"><article><img src="/avatar-ananya-sharma.png" alt="Fictional profile avatar for Ananya Sharma"/><div><strong>Ananya Sharma</strong><small>Cloud Support Associate</small><span>₹6–9 LPA potential</span></div></article><article><img src="/avatar-arjun-reddy.png" alt="Fictional profile avatar for Arjun Reddy"/><div><strong>Arjun Reddy</strong><small>Junior Cloud Engineer</small><span>₹8–12 LPA potential</span></div></article><article><img src="/avatar-kavya-nair.png" alt="Fictional profile avatar for Kavya Nair"/><div><strong>Kavya Nair</strong><small>Platform Analyst</small><span>₹10–16 LPA potential</span></div></article></div><small className="prep-footnote">Illustrative career snapshots — not salary promises.</small></motion.section>,
-    quiz: <motion.section {...variants} className="hero quiz">{showQuizLaunch ? <div className="quiz-launch"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div><h1>Get set for your <em>assessment.</em></h1><p>Your first question starts in a moment.</p></div><button className="button countdown-button" disabled>Get Started in {startCountdown || '…'}</button><div className="countdown-progress"><i style={{ width: `${(startCountdown / 3) * 100}%` }}/></div><small>Starting automatically</small></div> : assessment ? <><div className="quiz-head"><Brand/><button className="icon" onClick={toggleQuizMusic} aria-label={musicMuted ? 'Turn quiz music on' : 'Mute quiz music'}>{musicMuted ? <VolumeX/> : <Volume2/>}</button></div><div className="progress-label">Question {question + 1} of {assessment.questions.length}</div><div className="progress">{assessment.questions.map((_, i) => <i key={i} className={i <= question ? 'active' : ''}/>)}</div><h2>{assessment.questions[question].prompt}</h2><div className="choices">{assessment.questions[question].options.map(option => <button key={option.id} onClick={() => choose(option.id)}><i/>{option.label}</button>)}</div><div className="quiz-footer"><button className="theory-button" onClick={() => setTheory(true)}><BookOpen/> Read concept</button><span>Select an answer to continue</span></div>{theory && <Theory close={() => setTheory(false)} text={assessment.questions[question].theory}/>}</> : <><Brand/><h1>Preparing your <em>questions</em></h1><p>{quizError ?? 'Reconnecting to the assessment service.'}</p></>}</motion.section>,
+    quiz: <motion.section {...variants} className="hero quiz">{showQuizLaunch ? <div className="quiz-launch"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div><h1>Get set for your <em>assessment.</em></h1><p>Your first question starts in a moment.</p></div><button className="button countdown-button" disabled>Get Started in {startCountdown || '…'}</button><div className="countdown-progress"><i style={{ width: `${(startCountdown / 3) * 100}%` }}/></div><small>Starting automatically</small></div> : assessment ? <><div className="quiz-head"><Brand/><button className="icon" onClick={toggleQuizMusic} aria-label={musicMuted ? 'Turn quiz music on' : 'Mute quiz music'}>{musicMuted ? <VolumeX/> : <Volume2/>}</button></div><div className="progress-label">Question {question + 1} of {assessment.questions.length}</div><div className="progress">{assessment.questions.map((_, i) => <i key={i} className={i <= question ? 'active' : ''}/>)}</div><QuestionTags question={assessment.questions[question]}/><QuestionCode code={assessment.questions[question].codeSnippet}/><h2>{assessment.questions[question].prompt}</h2><div className="choices">{assessment.questions[question].options.map(option => <button key={option.id} onClick={() => choose(option.id)}><i/>{option.label}</button>)}</div><div className="quiz-footer"><button className="theory-button" onClick={() => setTheory(true)}><BookOpen/> Read concept</button><span>Select an answer to continue</span></div>{theory && <Theory close={() => setTheory(false)} text={assessment.questions[question].theory}/>}</> : <><Brand/><h1>Preparing your <em>questions</em></h1><p>{quizError ?? 'Reconnecting to the assessment service.'}</p></>}</motion.section>,
     analysis: <motion.section {...variants} className="hero analysis"><Brand/><div className="analysis-copy"><h1>Analysing your <em>results.</em></h1><p>Checking each response against the assessment standard.</p></div><div className="analysis-ring" style={{ '--analysis-progress': `${(analysisCount / (assessment?.questions.length ?? 5)) * 360}deg` } as CSSProperties}><div><b>{analysisCount}</b><span>of {assessment?.questions.length ?? 5}</span><small>QUESTIONS COMPLETED</small></div></div><div className="analysis-insights"><article className="speed-insight"><i><Zap/></i><b>You are faster than</b><span>60% people</span></article><article><b>{assessment?.questions.length ?? 5} topics</b><span>Answers are ready for review.</span></article></div><small className="analysis-status">Preparing your certificate journey…</small></motion.section>,
     contact: <motion.section {...variants} className="hero contact"><Brand/><h1>Where should we <em>send your certificate?</em></h1><p>We will use these details only for certificate delivery and support.</p><label className="input"><Volume2 size={22}/><input value={mobile} placeholder="Mobile number (Ex: +91 98765 43210)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setMobile(e.target.value); setFormError('') }} aria-label="WhatsApp number" inputMode="tel" autoComplete="tel"/></label><label className="input"><Mail size={22}/><input value={email} placeholder="Email address (Ex: rahul@example.com)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setEmail(e.target.value); setFormError('') }} aria-label="Email address" inputMode="email" autoComplete="email"/></label>{formError && <small className="form-error">{formError}</small>}<small className="privacy"><LockKeyhole/> Private and used only for this assessment.</small><Button onClick={saveContactDetails}>Save & view result</Button></motion.section>,
     result: <motion.section {...variants} className="hero result offer-result"><Brand/>{attemptResult?.passed ? <><h1>{resultHeadlineVariant ? <>Awesome {name.split(' ')[0] || 'there'}! <em>Test completed!</em></> : <>Congrats {name.split(' ')[0] || 'there'}! You scored a <em>great {Math.round(((attemptResult?.score ?? 0) / (attemptResult?.total ?? 5)) * 100)}%!</em></>}</h1><p className="offer-subtitle">Unlock instant certificate to view score &amp; prove you’re in the <em>top 18%</em> of <strong>{assessment?.title ?? 'this course'}</strong>.</p><div className="offer-certificate"><img src="/skillcert-certificate-template.png" alt="Preview of your SkillCert certificate"/><strong className="offer-recipient">Your Name</strong><strong className="offer-course">Course Name</strong><div className="certificate-recognition"><b>This certificate is recognized by 1100+ companies like</b><div><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span></div></div></div><p className="hired-claim"><b>8/10</b> CVs with this certificate got hired</p><div className="offer-sticky"><button className="button certificate-cta" onClick={beginCheckout} disabled={openingCheckout}>{openingCheckout ? <><LoaderCircle className="button-spinner"/> Opening secure payment…</> : <>Get my certificate <ChevronRight size={22}/></>}</button><p className="offer-price">For just: <b>{price}</b> <s>₹599</s></p></div></> : <><h1>Keep building your <em>foundation.</em></h1><p>{assessment?.title ?? 'This assessment'} can be attempted again when you’re ready.</p><Button onClick={() => { setQuestion(0); setAnswers([]); setStep('quiz') }}>Try again</Button></>}</motion.section>,
@@ -327,7 +331,7 @@ export default function App() {
     failed: <motion.section {...variants} className="hero failed"><Brand/><div className="failure-mark">×</div><h1>Payment <em>did not go through.</em></h1><p>{paymentError ?? 'No credential has been issued and no successful payment was confirmed.'}</p><div className="order">{assessment?.title ?? 'SkillCert'} credential <strong>{price}</strong></div><Button onClick={beginCheckout}>Try payment again</Button><button className="link" onClick={() => setStep('result')}>Return to result</button><small>Need help? Contact SkillCert support.</small></motion.section>
   }
   const verificationId = path.match(/^\/verify\/([^/]+)$/)?.[1]
-  const page = verificationId ? <CertificateVerification shortId={verificationId}/> : path === '/cloud-foundations' ? content[step] : path === '/assessments' ? <Explorer catalogue={catalogue} onSelect={(slug) => navigate(`/${slug}?src=catalogue`)} onHome={() => { window.history.pushState({}, '', '/'); setPath('/') }} /> : <Landing onStart={() => navigate('/cloud-foundations?src=direct')} onExplore={() => { window.history.pushState({}, '', '/assessments'); setPath('/assessments') }} />
+  const page = verificationId ? <CertificateVerification shortId={verificationId}/> : courseSlug ? content[step] : path === '/assessments' ? <Explorer catalogue={catalogue} onSelect={(slug) => navigate(`/${slug}?src=catalogue`)} onHome={() => { window.history.pushState({}, '', '/'); setPath('/') }} /> : <Landing onStart={() => navigate('/cloud-foundations?src=direct')} onExplore={() => { window.history.pushState({}, '', '/assessments'); setPath('/assessments') }} />
   return <main><div className="ambient a"/><div className="ambient b"/><AnimatePresence mode="wait">{page}</AnimatePresence></main>
 }
 
@@ -446,6 +450,12 @@ const comingSoon = [
   ['Java Foundations', 'Core Java concepts and problem solving', Code2], ['AI Fundamentals', 'Essential artificial intelligence concepts', Brain], ['Agile Essentials', 'Modern delivery and team principles', Workflow], ['Data Analytics', 'Core analysis and insight skills', Database], ['Cybersecurity Basics', 'Foundational security concepts', ShieldCheck], ['Digital Marketing', 'Channels, audiences and growth', Megaphone], ['UI/UX Fundamentals', 'Human-centred design principles', Palette]
 ] as const
 
-function Explorer({ catalogue, onSelect, onHome }: { catalogue: CertificationSummary[], onSelect: (slug: string) => void, onHome: () => void }) { const [query, setQuery] = useState(''); const available = catalogue.filter(item => item.title.toLowerCase().includes(query.toLowerCase())); return <motion.section {...variants} className="web-page explorer"><SiteNav onHome={onHome}/><header><div className="eyebrow">ASSESSMENT CATALOGUE</div><h1>Choose a skill to <em>validate.</em></h1><p>Start with a focused assessment built around practical fundamentals.</p><label className="search"><Search/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search assessments"/></label></header><div className="card-grid">{available.map((item, index) => <button className={`assessment-card ${index === 0 ? 'featured' : ''}`} key={item.slug} onClick={() => onSelect(item.slug)}><Cloud/><div><small>{index === 0 ? 'AVAILABLE NOW' : 'ASSESSMENT'}</small><strong>{item.title}</strong><p>{item.description}</p>{index === 0 && <em>{item.questionCount} questions · {item.durationMinutes} min</em>}</div><ChevronRight/></button>)}{comingSoon.filter(([title]) => title.toLowerCase().includes(query.toLowerCase())).map(([title, description, Icon]) => <div className="assessment-card coming" key={title}><Icon/><div><small>COMING SOON</small><strong>{title}</strong><p>{description}</p></div><ChevronRight/></div>)}</div></motion.section> }
+function Explorer({ catalogue, onSelect, onHome }: { catalogue: CertificationSummary[], onSelect: (slug: string) => void, onHome: () => void }) {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const categories = [...new Set(catalogue.map(item => item.category))]
+  const available = catalogue.filter(item => item.category === activeCategory && item.title.toLowerCase().includes(query.toLowerCase()))
+  return <motion.section {...variants} className="web-page explorer"><SiteNav onHome={onHome}/><header><div className="eyebrow">SKILLCERT TRACKS</div><h1>{activeCategory ? <>Choose a <em>certificate.</em></> : <>What would you like to <em>prove?</em></>}</h1><p>{activeCategory ? `Focused assessments in ${activeCategory}.` : 'Choose a skill track, then validate a focused capability.'}</p>{activeCategory && <button className="link category-back" onClick={() => { setActiveCategory(null); setQuery('') }}>← All tracks</button>}{activeCategory && <label className="search"><Search/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search certificates"/></label>}</header><div className="card-grid">{activeCategory ? available.map(item => <button className="assessment-card featured" key={item.slug} onClick={() => onSelect(item.slug)}>{item.category === 'Programming' ? <Code2/> : <Cloud/>}<div><small>{item.questionCount} QUESTIONS · {item.durationMinutes} MIN</small><strong>{item.title}</strong><p>{item.description}</p><em>Level 1 · Certificate assessment</em></div><ChevronRight/></button>) : categories.map(category => <button className="assessment-card featured" key={category} onClick={() => setActiveCategory(category)}>{category === 'Programming' ? <Code2/> : <Cloud/>}<div><small>SKILLCERT TRACK</small><strong>{category}</strong><p>{catalogue.filter(item => item.category === category).length} assessment{catalogue.filter(item => item.category === category).length === 1 ? '' : 's'} available</p></div><ChevronRight/></button>)}</div></motion.section>
+}
 
 function Theory({ close, text }: { close: () => void, text: string | null }) { return <motion.div className="sheet-backdrop" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} onClick={close}><motion.aside className="sheet" initial={{y: 500}} animate={{y: 0}} transition={{type: 'spring', damping: 24}} onClick={e => e.stopPropagation()}><button className="close" onClick={close}><X/></button><span className="tag"><BookOpen/>Concept guide</span><h2>Read the concept</h2><p>{text ?? 'This question checks a practical Cloud Foundations concept.'}</p><div className="callout"><b>Why it matters</b><br/>Use this concept to make informed decisions in real cloud environments.</div><Button onClick={close}>Back to question</Button></motion.aside></motion.div> }

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, BookOpen, Brain, Check, ChevronRight, Clock3, Cloud, Code2, Database, LoaderCircle, LockKeyhole, Mail, Megaphone, Palette, Search, ShieldCheck, Volume2, VolumeX, Workflow, X, Zap } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
+import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, loadIssuedCertificate, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
 import { openRazorpayCheckout } from './razorpay'
 
 type Step = 'intro' | 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'payment-processing' | 'success' | 'failed'
@@ -11,6 +11,18 @@ const variants = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }
 function Brand() { return <div className="brand"><img src="/skillcert-logo.png" alt="SkillCert by VAIONYX"/></div> }
 function Button({ children, onClick, secondary = false }: { children: React.ReactNode, onClick?: () => void, secondary?: boolean }) { return <button className={`button ${secondary ? 'secondary' : ''}`} onClick={onClick}>{children}<ChevronRight size={22}/></button> }
 function QuestionPreparationStatus({ courseName }: { courseName: string }) { return <div className="question-prep-status"><i/><span>Preparing short questions for <b>{courseName}</b></span></div> }
+
+function CertificateVerification({ shortId }: { shortId: string }) {
+  const [certificate, setCertificate] = useState<CertificateDetails | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    void loadIssuedCertificate(shortId).then(setCertificate).catch((reason: Error) => setError(reason.message))
+  }, [shortId])
+  if (error) return <motion.section {...variants} className="hero verification-page"><Brand/><div className="failure-mark">×</div><h1>Certificate <em>not found.</em></h1><p>{error}</p></motion.section>
+  if (!certificate) return <motion.section {...variants} className="hero verification-page"><Brand/><div className="payment-processing-spinner"><LoaderCircle/></div><h1>Verifying <em>certificate.</em></h1><p>Please wait while we check the SkillCert record.</p></motion.section>
+  const issuedDate = new Intl.DateTimeFormat('en-IN', { dateStyle: 'long' }).format(new Date(certificate.issuedAt))
+  return <motion.section {...variants} className="hero verification-page"><Brand/><div className="verified-heading"><ShieldCheck/><span>VERIFIED CERTIFICATE</span></div><h1>This certificate is <em>valid.</em></h1><p>The SkillCert record below is publicly verifiable.</p><div className="verified-certificate"><img src={`${apiBase}${certificate.pngUrl}`} alt={`${certificate.courseName} certificate for ${certificate.recipientName}`}/></div><dl className="verification-details"><div><dt>Issued to</dt><dd>{certificate.recipientName}</dd></div><div><dt>Course</dt><dd>{certificate.courseName}</dd></div><div><dt>Certificate ID</dt><dd>{certificate.shortId}</dd></div><div><dt>Issued on</dt><dd>{issuedDate}</dd></div></dl><a className="button verification-download" href={`${apiBase}${certificate.pdfUrl}`} target="_blank" rel="noreferrer">View certificate PDF <ChevronRight size={20}/></a></motion.section>
+}
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
@@ -312,7 +324,8 @@ export default function App() {
     success: <motion.section {...variants} className="hero success"><Brand/><div className="success-mark"><Check/></div><h1>Your certificate <em>is ready.</em></h1><p>A verified {issuedCertificate?.courseName ?? assessment?.title ?? 'SkillCert'} certificate has been issued for {name} and sent to <b>{email}</b>.</p><button className="button success-explore" onClick={() => { window.history.pushState({}, '', '/assessments'); setPath('/assessments') }}>Explore more certifications <ChevronRight size={18}/></button></motion.section>,
     failed: <motion.section {...variants} className="hero failed"><Brand/><div className="failure-mark">×</div><h1>Payment <em>did not go through.</em></h1><p>{paymentError ?? 'No credential has been issued and no successful payment was confirmed.'}</p><div className="order">{assessment?.title ?? 'SkillCert'} credential <strong>{price}</strong></div><Button onClick={beginCheckout}>Try payment again</Button><button className="link" onClick={() => setStep('result')}>Return to result</button><small>Need help? Contact SkillCert support.</small></motion.section>
   }
-  const page = path === '/cloud-foundations' ? content[step] : path === '/assessments' ? <Explorer catalogue={catalogue} onSelect={(slug) => navigate(`/${slug}?src=catalogue`)} onHome={() => { window.history.pushState({}, '', '/'); setPath('/') }} /> : <Landing onStart={() => navigate('/cloud-foundations?src=direct')} onExplore={() => { window.history.pushState({}, '', '/assessments'); setPath('/assessments') }} />
+  const verificationId = path.match(/^\/verify\/([^/]+)$/)?.[1]
+  const page = verificationId ? <CertificateVerification shortId={verificationId}/> : path === '/cloud-foundations' ? content[step] : path === '/assessments' ? <Explorer catalogue={catalogue} onSelect={(slug) => navigate(`/${slug}?src=catalogue`)} onHome={() => { window.history.pushState({}, '', '/'); setPath('/') }} /> : <Landing onStart={() => navigate('/cloud-foundations?src=direct')} onExplore={() => { window.history.pushState({}, '', '/assessments'); setPath('/assessments') }} />
   return <main><div className="ambient a"/><div className="ambient b"/><AnimatePresence mode="wait">{page}</AnimatePresence></main>
 }
 

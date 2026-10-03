@@ -52,3 +52,9 @@ export async function verifyRazorpayPayment(payload: { attemptId: string; razorp
   if (!response.ok) throw new Error('Payment verification is still pending. Please refresh in a moment.')
   return response.json()
 }
+
+export async function loadIssuedCertificate(shortId: string): Promise<CertificateDetails> {
+  const response = await fetch(`${apiBase}/certificates/verify/${encodeURIComponent(shortId)}`)
+  if (!response.ok) throw new Error('This certificate could not be verified.')
+  return response.json()
+}

@@ -30,7 +30,7 @@ function CertificateVerification({ shortId }: { shortId: string }) {
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
-  const [step, setStep] = useState<Step>(() => /^\/(?!assessments$|verify\/|$)[^/]+$/.test(window.location.pathname) ? 'intro' : 'loading')
+  const [step, setStep] = useState<Step>('loading')
   const [name, setName] = useState('')
   const [question, setQuestion] = useState(0)
   const [score, setScore] = useState(0)
@@ -41,7 +41,7 @@ export default function App() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [openingCheckout, setOpeningCheckout] = useState(false)
   const [quizError, setQuizError] = useState<string | null>(null)
-  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [assessmentLoadError, setAssessmentLoadError] = useState<string | null>(null)
   const [startCountdown, setStartCountdown] = useState(3)
   const [showQuizLaunch, setShowQuizLaunch] = useState(false)
   const [analysisCount, setAnalysisCount] = useState(0)
@@ -75,7 +75,7 @@ export default function App() {
     audioContext.current ??= new AudioContext()
     return audioContext.current
   }
-  const navigate = (nextPath: string) => { window.history.pushState({}, '', nextPath); setAssessment(null); setPath(nextPath); setStep(/^\/(?!assessments$|verify\/|$)[^/]+$/.test(new URL(nextPath, window.location.origin).pathname) ? 'intro' : 'loading') }
+  const navigate = (nextPath: string) => { window.history.pushState({}, '', nextPath); setAssessment(null); setAssessmentLoadError(null); setPath(nextPath); setStep('loading') }
   const startPreparation = () => {
     if (!name.trim()) { setFormError('Enter the name you want printed on your certificate.'); return }
     setName(name.trim())
@@ -163,43 +163,22 @@ export default function App() {
   useEffect(() => {
     if (step !== 'loading' || !courseSlug) return
 
-    const minimumLoadingTime = 2400
-    const maximumLoadingTime = 3000
-    const startedAt = Date.now()
     let cancelled = false
-    let completed = false
-    let completionTimer: number | undefined
-    setLoadingProgress(0)
+    setAssessmentLoadError(null)
     setQuizError(null)
-    const progressTimer = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt
-      // Reserve the final segment for a confirmed API response.
-      setLoadingProgress(Math.min(92, Math.floor((elapsed / minimumLoadingTime) * 92)))
-    }, 35)
-    const complete = () => {
-      if (completed || cancelled) return
-      completed = true
-      const remaining = Math.max(0, minimumLoadingTime - (Date.now() - startedAt))
-      completionTimer = window.setTimeout(() => {
-        if (cancelled) return
-        window.clearInterval(progressTimer)
-        setLoadingProgress(100)
-        window.setTimeout(() => { if (!cancelled) setStep('name') }, 260)
-      }, remaining)
-    }
-    // A slow or unavailable local API must never leave the visitor on a stuck screen.
-    const maximumTimer = window.setTimeout(complete, maximumLoadingTime)
 
     loadAssessment(courseSlug)
-      // Keep a slow response even after the visual loader moves to the next screen.
-      .then((loadedAssessment) => { setAssessment(loadedAssessment); if (!cancelled) complete() })
-      .catch((error: Error) => { setQuizError(error.message); if (!cancelled) complete() })
+      .then((loadedAssessment) => {
+        if (cancelled) return
+        setAssessment(loadedAssessment)
+        setStep('intro')
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setAssessmentLoadError(error.message)
+      })
 
     return () => {
       cancelled = true
-      window.clearInterval(progressTimer)
-      window.clearTimeout(maximumTimer)
-      if (completionTimer) window.clearTimeout(completionTimer)
     }
   }, [courseSlug, path, step])
   useEffect(() => { loadCertifications().then(setCatalogue).catch(() => undefined) }, [])
@@ -317,7 +296,7 @@ export default function App() {
 
   const content: Record<Step, React.ReactNode> = {
     intro: <CourseIntro courseName={assessment?.title ?? 'Cloud Foundations'} onStart={() => setStep('name')}/>,
-    loading: <motion.section {...variants} className="hero loading"><Brand/><div className="orbit" style={{ '--progress': `${loadingProgress * 3.6}deg` } as CSSProperties}><span>{loadingProgress}%</span><small>PREPARING</small></div><h1>Preparing your <em>{assessment?.title ?? 'Cloud Foundations'}</em> certificate</h1><p>A short challenge. A verifiable outcome.</p><div className="credential-ghost"><Award/></div></motion.section>,
+    loading: <motion.section {...variants} className="hero assessment-loader"><Brand/>{assessmentLoadError ? <div className="assessment-loader-error"><p>We couldn’t load this assessment.</p><button className="link" onClick={() => window.location.reload()}>Try again</button></div> : <div className="assessment-loader-status" aria-live="polite"><span className="assessment-loader-dots" aria-hidden="true"><i/><i/><i/></span><small>Just a moment</small></div>}</motion.section>,
     name: <motion.section {...variants} className="hero name"><Brand/><div className="eyebrow">LEARN · ASSESS · GET CERTIFIED</div><h1>Who is this <em>certificate</em> for?</h1><p>Use the name you want shown on your certificate.</p><label className="input"><Award size={22}/><input value={name} maxLength={30} placeholder="Your Full name (Ex: Rahul Singh)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setName(e.target.value); setFormError('') }} aria-label="Name on certificate" autoComplete="name"/></label>{formError && <small className="form-error">{formError}</small>}<Button onClick={startPreparation}>Continue</Button><div className="achievement-promise"><strong>Your certificate can help you <em>stand out to 500+ companies, including</em></strong><div className="career-logos"><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span><span className="adobe-mark"><i>A</i>Adobe</span></div></div></motion.section>,
     'preparing-companies': <motion.section {...variants} className="hero preparation-screen"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div className="prep-copy"><div className="eyebrow">YOUR SKILL, MADE VISIBLE</div><h1>Carry your proof into your <em>next opportunity.</em></h1><p>A SkillCert certificate is designed to be simple to share and easy to verify.</p></div><div className="prep-company-grid"><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span><span className="adobe-mark"><i>A</i>Adobe</span><span className="more-mark">+500<br/><small>companies</small></span></div><small className="prep-footnote">Your questions are being selected now.</small></motion.section>,
     'preparing-stories': <motion.section {...variants} className="hero preparation-screen"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div className="prep-copy"><div className="eyebrow">CAREER MOMENTUM STARTS SMALL</div><h1>One assessment. A stronger <em>next step.</em></h1><p>Focused practice today can make you more confident for tomorrow's roles.</p></div><div className="prep-profile-grid"><article><img src="/avatar-ananya-sharma.png" alt="Fictional profile avatar for Ananya Sharma"/><div><strong>Ananya Sharma</strong><small>Cloud Support Associate</small><span>₹6–9 LPA potential</span></div></article><article><img src="/avatar-arjun-reddy.png" alt="Fictional profile avatar for Arjun Reddy"/><div><strong>Arjun Reddy</strong><small>Junior Cloud Engineer</small><span>₹8–12 LPA potential</span></div></article><article><img src="/avatar-kavya-nair.png" alt="Fictional profile avatar for Kavya Nair"/><div><strong>Kavya Nair</strong><small>Platform Analyst</small><span>₹10–16 LPA potential</span></div></article></div><small className="prep-footnote">Illustrative career snapshots — not salary promises.</small></motion.section>,

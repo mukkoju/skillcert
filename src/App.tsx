@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Award, BookOpen, Brain, Check, ChevronRight, Clock3, Cloud, Code2, Database, LoaderCircle, LockKeyhole, Mail, Megaphone, Palette, Search, ShieldCheck, Volume2, VolumeX, Workflow, X, Zap } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, loadIssuedCertificate, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AssessmentQuestion, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
+import { initialiseMetaPixel, trackPixel } from './metaPixel'
 import { openRazorpayCheckout } from './razorpay'
 
 type Step = 'intro' | 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'payment-processing' | 'success' | 'failed'
@@ -73,6 +74,11 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 180)
   }
+  useEffect(() => { initialiseMetaPixel() }, [])
+  useEffect(() => {
+    // Meta needs a PageView for each route because this is a single-page app.
+    trackPixel('PageView')
+  }, [path])
   const getAudioContext = () => {
     audioContext.current ??= new AudioContext()
     return audioContext.current
@@ -81,6 +87,7 @@ export default function App() {
   const startPreparation = () => {
     if (!name.trim()) { setFormError('Enter the name you want printed on your certificate.'); return }
     setName(name.trim())
+    trackPixel('StartAssessment', { content_name: assessment?.title ?? courseSlug ?? 'SkillCert assessment' })
     setFormError('')
     try {
       void getAudioContext().resume()
@@ -106,6 +113,7 @@ export default function App() {
     if (!attemptResult?.attemptId) { setFormError('Your assessment could not be found. Please try again.'); return }
     try {
       await saveAttemptContact(attemptResult.attemptId, email.trim(), mobile.trim())
+      trackPixel('Lead', { content_name: assessment?.title ?? 'SkillCert assessment' })
       setFormError('')
       setStep('result')
     } catch (error) {
@@ -191,6 +199,10 @@ export default function App() {
     return () => { cancelled = true }
   }, [assessment, courseSlug, step])
   useEffect(() => {
+    if (step !== 'intro' || !assessment) return
+    trackPixel('ViewContent', { content_name: assessment.title, content_type: 'assessment' })
+  }, [assessment, step])
+  useEffect(() => {
     if (step !== 'preparing-companies' && step !== 'preparing-stories') return
     if (step === 'preparing-stories' && !assessment) return
     const nextStep = step === 'preparing-companies' ? 'preparing-stories' : 'quiz'
@@ -256,7 +268,11 @@ export default function App() {
     // Show the analysis experience instantly; scoring continues in the background.
     setAttemptResult(null)
     setStep('analysis')
-    try { setAttemptResult(await submitAttempt(assessment.slug, name, nextAnswers)) } catch (error) { setQuizError(error instanceof Error ? error.message : 'Unable to submit this assessment.'); setStep('quiz') }
+    try {
+      const result = await submitAttempt(assessment.slug, name, nextAnswers)
+      setAttemptResult(result)
+      trackPixel('CompleteRegistration', { content_name: assessment.title, status: result.passed ? 'passed' : 'not_passed' })
+    } catch (error) { setQuizError(error instanceof Error ? error.message : 'Unable to submit this assessment.'); setStep('quiz') }
   }
   useEffect(() => {
     if (step !== 'analysis') return
@@ -283,6 +299,7 @@ export default function App() {
     try {
       setPaymentError(null)
       setOpeningCheckout(true)
+      trackPixel('InitiateCheckout', { content_name: assessment?.title ?? 'SkillCert assessment', value: pricePaise / 100, currency: 'INR' })
       const order = await createRazorpayOrder(attemptResult.attemptId)
       await openRazorpayCheckout(order, async response => {
         setOpeningCheckout(false)
@@ -290,6 +307,7 @@ export default function App() {
         try {
           const certificate = await verifyRazorpayPayment({ attemptId: order.attemptId, razorpayPaymentId: response.razorpay_payment_id, razorpayOrderId: response.razorpay_order_id, razorpaySignature: response.razorpay_signature })
           setIssuedCertificate(certificate)
+          trackPixel('Purchase', { content_name: certificate.courseName, value: pricePaise / 100, currency: 'INR' })
           setStep('success')
         } catch (error) { setPaymentError(error instanceof Error ? error.message : 'Unable to verify payment.'); setStep('failed') }
       }, () => setOpeningCheckout(false))

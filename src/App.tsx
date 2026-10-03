@@ -189,7 +189,7 @@ export default function App() {
     if (step !== 'preparing-companies' && step !== 'preparing-stories') return
     if (step === 'preparing-stories' && !assessment) return
     const nextStep = step === 'preparing-companies' ? 'preparing-stories' : 'quiz'
-    const timer = window.setTimeout(() => setStep(nextStep), 3000)
+    const timer = window.setTimeout(() => setStep(nextStep), 2000)
     return () => window.clearTimeout(timer)
   }, [assessment, step])
   useEffect(() => {

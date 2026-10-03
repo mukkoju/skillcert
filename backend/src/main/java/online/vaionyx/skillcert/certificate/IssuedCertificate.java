@@ -26,6 +26,7 @@ public class IssuedCertificate {
   @Column(name = "total_questions", nullable = false) private int totalQuestions;
   @Column(nullable = false) private String status;
   @Column(name = "issued_at", nullable = false) private Instant issuedAt;
+  @Column(name = "email_sent_at") private Instant emailSentAt;
 
   protected IssuedCertificate() {}
 
@@ -41,6 +42,7 @@ public class IssuedCertificate {
   }
 
   public UUID getId() { return id; }
+  public Attempt getAttempt() { return attempt; }
   public Certification getCertification() { return certification; }
   public String getRecipientName() { return recipientName; }
   public String getShortId() { return shortId; }
@@ -48,4 +50,6 @@ public class IssuedCertificate {
   public int getTotalQuestions() { return totalQuestions; }
   public String getStatus() { return status; }
   public Instant getIssuedAt() { return issuedAt; }
+  public Instant getEmailSentAt() { return emailSentAt; }
+  public void markEmailSent() { this.emailSentAt = Instant.now(); }
 }

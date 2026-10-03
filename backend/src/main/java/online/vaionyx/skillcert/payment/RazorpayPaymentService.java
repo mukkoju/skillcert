@@ -14,6 +14,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import online.vaionyx.skillcert.certificate.CertificateDtos;
 import online.vaionyx.skillcert.certificate.CertificateIssuanceService;
+import online.vaionyx.skillcert.certificate.CertificateEmailService;
 import online.vaionyx.skillcert.certification.Attempt;
 import online.vaionyx.skillcert.certification.AttemptRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,17 +29,18 @@ public class RazorpayPaymentService {
   private final AttemptRepository attempts;
   private final PaymentRepository payments;
   private final CertificateIssuanceService issuance;
+  private final CertificateEmailService email;
   private final ObjectMapper json;
   private final HttpClient http = HttpClient.newHttpClient();
   private final String keyId;
   private final String keySecret;
   private final String webhookSecret;
 
-  public RazorpayPaymentService(AttemptRepository attempts, PaymentRepository payments, CertificateIssuanceService issuance, ObjectMapper json,
+  public RazorpayPaymentService(AttemptRepository attempts, PaymentRepository payments, CertificateIssuanceService issuance, CertificateEmailService email, ObjectMapper json,
       @Value("${app.razorpay-key-id:}") String keyId,
       @Value("${app.razorpay-key-secret:}") String keySecret,
       @Value("${app.razorpay-webhook-secret:}") String webhookSecret) {
-    this.attempts = attempts; this.payments = payments; this.issuance = issuance; this.json = json;
+    this.attempts = attempts; this.payments = payments; this.issuance = issuance; this.email = email; this.json = json;
     this.keyId = keyId; this.keySecret = keySecret; this.webhookSecret = webhookSecret;
   }
 
@@ -71,7 +73,9 @@ public class RazorpayPaymentService {
       throw new ResponseStatusException(HttpStatus.ACCEPTED, "Payment is awaiting capture");
     }
     payment.markCaptured(request.razorpayPaymentId());
-    return issuance.issueAfterPayment(request.attemptId());
+    CertificateDtos.CertificateDetails certificate = issuance.issueAfterPayment(request.attemptId());
+    email.deliver(certificate.shortId());
+    return certificate;
   }
 
   @Transactional
@@ -86,7 +90,8 @@ public class RazorpayPaymentService {
       Payment payment = payments.findByRazorpayOrderId(entity.path("order_id").asText()).orElse(null);
       if (payment == null || "CAPTURED".equals(payment.getStatus())) return;
       payment.markCaptured(entity.path("id").asText());
-      issuance.issueAfterPayment(payment.getAttempt().getId());
+      CertificateDtos.CertificateDetails certificate = issuance.issueAfterPayment(payment.getAttempt().getId());
+      email.deliver(certificate.shortId());
     } catch (ResponseStatusException exception) {
       throw exception;
     } catch (Exception exception) {

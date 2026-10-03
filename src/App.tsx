@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, BookOpen, Brain, Check, ChevronRight, Clock3, Cloud, Code2, Database, LoaderCircle, LockKeyhole, Mail, Megaphone, Palette, Search, ShieldCheck, Volume2, VolumeX, Workflow, X, Zap } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, submitAttempt, verifyRazorpayPayment, type Assessment, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
+import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
 import { openRazorpayCheckout } from './razorpay'
 
 type Step = 'intro' | 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'payment-processing' | 'success' | 'failed'
@@ -78,13 +78,19 @@ export default function App() {
     setShowQuizLaunch(true)
     setStep('preparing-companies')
   }
-  const saveContactDetails = () => {
+  const saveContactDetails = async () => {
     const mobileDigits = mobile.replace(/\D/g, '')
     if (!mobile.trim() || !email.trim()) { setFormError('Enter both your mobile number and email address.'); return }
     if (mobileDigits.length < 10) { setFormError('Enter a valid mobile number.'); return }
     if (!/^\S+@\S+\.\S+$/.test(email)) { setFormError('Enter a valid email address.'); return }
-    setFormError('')
-    setStep('result')
+    if (!attemptResult?.attemptId) { setFormError('Your assessment could not be found. Please try again.'); return }
+    try {
+      await saveAttemptContact(attemptResult.attemptId, email.trim(), mobile.trim())
+      setFormError('')
+      setStep('result')
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Unable to save your contact details. Please try again.')
+    }
   }
   const playExamTone = () => {
     const context = getAudioContext()

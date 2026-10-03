@@ -38,6 +38,15 @@ export async function createRazorpayOrder(attemptId: string): Promise<RazorpayOr
   return response.json()
 }
 
+export async function saveAttemptContact(attemptId: string, email: string, mobile: string): Promise<void> {
+  const response = await fetch(`${apiBase}/certifications/attempts/${attemptId}/contact`, {
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+    body: JSON.stringify({ email, mobile }),
+  })
+  if (!response.ok) throw new Error('Unable to save your contact details. Please try again.')
+}
+
 export async function verifyRazorpayPayment(payload: { attemptId: string; razorpayPaymentId: string; razorpayOrderId: string; razorpaySignature: string }): Promise<CertificateDetails> {
   const response = await fetch(`${apiBase}/payments/razorpay/verify`, { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(payload) })
   if (!response.ok) throw new Error('Payment verification is still pending. Please refresh in a moment.')

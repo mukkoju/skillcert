@@ -3,6 +3,7 @@ package online.vaionyx.skillcert.certification;
 import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import static online.vaionyx.skillcert.certification.CertificationDtos.*;
 
@@ -20,6 +21,13 @@ public class CertificationService {
     List<Question> questionList = questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId()); int score = 0;
     for (Question q : questionList) { UUID optionId = supplied.get(q.getId()); if (optionId != null && options.findByIdAndQuestionId(optionId, q.getId()).map(QuestionOption::isCorrect).orElse(false)) score++; }
     boolean passed = score >= certification.getPassingScore(); Attempt attempt = attempts.save(new Attempt(certification, request.recipientName().trim(), score, questionList.size(), passed)); return new AttemptResult(attempt.getId(), passed, score, questionList.size(), certification.getPassingScore(), passed ? "PAYMENT_REQUIRED" : "NOT_ELIGIBLE");
+  }
+  @Transactional
+  public void saveContact(UUID attemptId, SaveContact request) {
+    Attempt attempt = attempts.findById(attemptId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assessment attempt not found"));
+    String mobileDigits = request.mobile().replaceAll("\\D", "");
+    if (mobileDigits.length() < 10) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter a valid mobile number");
+    attempt.setContactDetails(request.email().trim().toLowerCase(Locale.ROOT), request.mobile().trim());
   }
   private Certification active(String slug) { return certifications.findBySlugAndPublishedTrue(slug).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found")); }
   private CertificationSummary summary(Certification c) { return new CertificationSummary(c.getSlug(),c.getTitle(),c.getDescription(),c.getDurationMinutes(),c.getQuestionCount(),c.getPassingScore(),c.getPricePaise()); }

@@ -341,7 +341,7 @@ export default function App() {
     setStartCountdown(3)
     playExamTone()
     // Keep a light countdown pulse going until the question screen takes over.
-    const beepTimer = window.setInterval(playExamTone, 360)
+    const beepTimer = window.setInterval(playExamTone, 667)
     let timer = 0
     timer = window.setInterval(() => {
       setStartCountdown(current => {

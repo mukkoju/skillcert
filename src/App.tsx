@@ -6,6 +6,9 @@ import { initialiseMetaPixel, trackPixel } from './metaPixel'
 import { openRazorpayCheckout } from './razorpay'
 
 type Step = 'intro' | 'loading' | 'name' | 'preparing-companies' | 'preparing-stories' | 'quiz' | 'analysis' | 'contact' | 'result' | 'checkout' | 'payment-processing' | 'success' | 'failed'
+type PreviewScreen = Exclude<Step, 'loading'> | 'quiz-launch'
+
+const previewScreens: readonly PreviewScreen[] = ['intro', 'name', 'preparing-companies', 'preparing-stories', 'quiz-launch', 'quiz', 'analysis', 'contact', 'result', 'checkout', 'payment-processing', 'success', 'failed']
 
 const variants = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -18 } }
 const assetBaseUrl = (import.meta.env.VITE_ASSET_BASE_URL ?? (import.meta.env.PROD ? 'https://assets.vaionyxsolutions.online' : '')).replace(/\/$/, '')
@@ -120,7 +123,8 @@ export default function App() {
   const [formError, setFormError] = useState('')
   const routeSlug = path.match(/^\/([^/]+)$/)?.[1]
   const courseSlug = routeSlug && routeSlug !== 'assessments' ? routeSlug : undefined
-  const isResultPreview = new URLSearchParams(window.location.search).get('preview') === 'result'
+  const previewValue = new URLSearchParams(window.location.search).get('preview')
+  const previewScreen = previewScreens.includes(previewValue as PreviewScreen) ? previewValue as PreviewScreen : null
   const audioContext = useRef<AudioContext | null>(null)
   const quizMusic = useRef<HTMLAudioElement | null>(null)
   const formScrollTimer = useRef<number | null>(null)
@@ -288,10 +292,11 @@ export default function App() {
       .then((loadedAssessment) => {
         if (cancelled) return
         setAssessment(loadedAssessment)
-        if (isResultPreview) {
+        if (previewScreen) {
           setName('Preview User')
           setAttemptResult({ attemptId: 'preview-result', passed: true, score: Math.max(loadedAssessment.passingScore, Math.ceil(loadedAssessment.questions.length * .8)), total: loadedAssessment.questions.length, passingScore: loadedAssessment.passingScore, credentialStatus: 'PREVIEW' })
-          setStep('result')
+          setShowQuizLaunch(previewScreen === 'quiz-launch')
+          setStep(previewScreen === 'quiz-launch' ? 'quiz' : previewScreen)
         } else {
           setStep('intro')
         }
@@ -303,7 +308,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [courseSlug, isResultPreview, path, step])
+  }, [courseSlug, path, previewScreen, step])
   useEffect(() => { loadCertifications().then(setCatalogue).catch(() => undefined) }, [])
   useEffect(() => {
     if (step !== 'intro' || assessment) return
@@ -316,12 +321,12 @@ export default function App() {
     trackPixel('ViewContent', { content_name: assessment.title, content_type: 'assessment' })
   }, [assessment, step])
   useEffect(() => {
-    if (step !== 'preparing-companies' && step !== 'preparing-stories') return
+    if (previewScreen || (step !== 'preparing-companies' && step !== 'preparing-stories')) return
     if (step === 'preparing-stories' && !assessment) return
     const nextStep = step === 'preparing-companies' ? 'preparing-stories' : 'quiz'
     const timer = window.setTimeout(() => setStep(nextStep), 2000)
     return () => window.clearTimeout(timer)
-  }, [assessment, step])
+  }, [assessment, previewScreen, step])
   useEffect(() => {
     if (step !== 'quiz' || assessment) return
     let cancelled = false
@@ -403,10 +408,10 @@ export default function App() {
     return () => { window.clearInterval(progressTimer) }
   }, [assessment, step])
   useEffect(() => {
-    if (step !== 'analysis' || !attemptResult) return
+    if (previewScreen || step !== 'analysis' || !attemptResult) return
     const timer = window.setTimeout(() => setStep('contact'), 1600)
     return () => window.clearTimeout(timer)
-  }, [attemptResult, step])
+  }, [attemptResult, previewScreen, step])
   useEffect(() => {
     if (step !== 'result' || !attemptResult?.passed) return
     setOfferTimerSeconds(120)
@@ -433,7 +438,7 @@ export default function App() {
   const offerTimerLabel = `${Math.floor(offerTimerSeconds / 60).toString().padStart(2, '0')}:${(offerTimerSeconds % 60).toString().padStart(2, '0')}`
   const beginCheckout = async () => {
     if (openingCheckout) return
-    if (attemptResult?.attemptId === 'preview-result') return
+    if (previewScreen || attemptResult?.attemptId === 'preview-result') return
     if (!attemptResult?.attemptId) { setPaymentError('Complete and pass the assessment before issuing a credential.'); return }
     try {
       setPaymentError(null)

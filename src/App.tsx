@@ -161,6 +161,31 @@ export default function App() {
     oscillator.start()
     oscillator.stop(context.currentTime + .23)
   }
+  const playAnalysisCoin = (isFinalTick: boolean) => {
+    const context = getAudioContext()
+    void context.resume()
+    const start = context.currentTime
+    const gain = context.createGain()
+    gain.gain.setValueAtTime(isFinalTick ? .1 : .065, start)
+    gain.gain.exponentialRampToValueAtTime(.001, start + (isFinalTick ? .2 : .11))
+    gain.connect(context.destination)
+
+    const primary = context.createOscillator()
+    primary.type = 'sine'
+    primary.frequency.setValueAtTime(isFinalTick ? 1047 : 784, start)
+    primary.connect(gain)
+    primary.start(start)
+    primary.stop(start + (isFinalTick ? .2 : .11))
+
+    if (isFinalTick) {
+      const sparkle = context.createOscillator()
+      sparkle.type = 'sine'
+      sparkle.frequency.setValueAtTime(1319, start + .07)
+      sparkle.connect(gain)
+      sparkle.start(start + .07)
+      sparkle.stop(start + .2)
+    }
+  }
   const toggleQuizMusic = () => {
     const music = quizMusic.current
     if (!music) return
@@ -282,13 +307,14 @@ export default function App() {
     const progressTimer = window.setInterval(() => {
       completed += 1
       setAnalysisCount(completed)
+      playAnalysisCoin(completed >= total)
       if (completed >= total) window.clearInterval(progressTimer)
-    }, 260)
+    }, 110)
     return () => { window.clearInterval(progressTimer) }
   }, [assessment, step])
   useEffect(() => {
     if (step !== 'analysis' || !attemptResult) return
-    const timer = window.setTimeout(() => setStep('contact'), 3000)
+    const timer = window.setTimeout(() => setStep('contact'), 1600)
     return () => window.clearTimeout(timer)
   }, [attemptResult, step])
   const pricePaise = catalogue.find(item => item.slug === assessment?.slug)?.pricePaise ?? 19900

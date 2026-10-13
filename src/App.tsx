@@ -59,6 +59,7 @@ export default function App() {
   const [formError, setFormError] = useState('')
   const routeSlug = path.match(/^\/([^/]+)$/)?.[1]
   const courseSlug = routeSlug && routeSlug !== 'assessments' ? routeSlug : undefined
+  const isResultPreview = new URLSearchParams(window.location.search).get('preview') === 'result'
   const audioContext = useRef<AudioContext | null>(null)
   const quizMusic = useRef<HTMLAudioElement | null>(null)
   const formScrollTimer = useRef<number | null>(null)
@@ -226,7 +227,13 @@ export default function App() {
       .then((loadedAssessment) => {
         if (cancelled) return
         setAssessment(loadedAssessment)
-        setStep('intro')
+        if (isResultPreview) {
+          setName('Preview User')
+          setAttemptResult({ attemptId: 'preview-result', passed: true, score: Math.max(loadedAssessment.passingScore, Math.ceil(loadedAssessment.questions.length * .8)), total: loadedAssessment.questions.length, passingScore: loadedAssessment.passingScore, credentialStatus: 'PREVIEW' })
+          setStep('result')
+        } else {
+          setStep('intro')
+        }
       })
       .catch((error: Error) => {
         if (!cancelled) setAssessmentLoadError(error.message)
@@ -235,7 +242,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [courseSlug, path, step])
+  }, [courseSlug, isResultPreview, path, step])
   useEffect(() => { loadCertifications().then(setCatalogue).catch(() => undefined) }, [])
   useEffect(() => {
     if (step !== 'intro' || assessment) return
@@ -363,6 +370,7 @@ export default function App() {
   const offerTimerLabel = `${Math.floor(offerTimerSeconds / 60).toString().padStart(2, '0')}:${(offerTimerSeconds % 60).toString().padStart(2, '0')}`
   const beginCheckout = async () => {
     if (openingCheckout) return
+    if (attemptResult?.attemptId === 'preview-result') return
     if (!attemptResult?.attemptId) { setPaymentError('Complete and pass the assessment before issuing a credential.'); return }
     try {
       setPaymentError(null)

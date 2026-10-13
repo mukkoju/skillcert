@@ -356,9 +356,9 @@ export default function App() {
     return () => { window.clearInterval(timer); window.clearInterval(beepTimer) }
   }, [showQuizLaunch, step])
   useEffect(() => {
-    // Keep the ambience continuous from the "Get started" countdown through
-    // the assessment. Cleanup only when the learner leaves the quiz flow.
-    if (step !== 'quiz' || !assessment) return
+    // The countdown has its own beep. Bring in the deep ambience only once
+    // the learner reaches the first question.
+    if (step !== 'quiz' || showQuizLaunch || !assessment) return
     const music = quizMusic.current ?? new Audio(assetUrl('/audio/skillcert-exam-ambience.mp3'))
     music.loop = true
     quizMusic.current = music
@@ -370,7 +370,7 @@ export default function App() {
       music.currentTime = 0
       music.volume = 0
     }
-  }, [assessment, step])
+  }, [assessment, showQuizLaunch, step])
   useEffect(() => {
     const music = quizMusic.current
     if (!music) return

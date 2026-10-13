@@ -17,6 +17,67 @@ function QuestionPreparationStatus({ courseName }: { courseName: string }) { ret
 function QuestionTags({ question }: { question: AssessmentQuestion }) { return <div className="question-tags"><span>{question.topic}</span><span>{question.difficulty}</span>{question.askedByCompany ? <span>Asked by {question.askedByCompany}</span> : <span>Industry-style practice</span>}</div> }
 function QuestionCode({ code }: { code: string | null }) { return code ? <pre className="question-code"><code>{code}</code></pre> : null }
 
+function CelebrationConfetti() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const context = canvas?.getContext('2d')
+    if (!canvas || !context) return
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const particles = Array.from({ length: reducedMotion ? 18 : 64 }, (_, index) => ({
+      x: Math.random(), y: -Math.random() * .25, vx: (Math.random() - .5) * .00055, vy: .00025 + Math.random() * .00035,
+      size: 4 + Math.random() * 6, angle: Math.random() * Math.PI, spin: (Math.random() - .5) * .014,
+      color: ['#1bcfff', '#4a79ff', '#f4c85b', '#ffffff'][index % 4], circle: index % 5 === 0,
+    }))
+    let frame = 0
+    let start = 0
+    let last = 0
+    let width = 0
+    let height = 0
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect()
+      const ratio = Math.min(window.devicePixelRatio || 1, 2)
+      width = rect.width
+      height = rect.height
+      canvas.width = Math.round(width * ratio)
+      canvas.height = Math.round(height * ratio)
+      context.setTransform(ratio, 0, 0, ratio, 0, 0)
+    }
+    const draw = (time: number) => {
+      if (!start) start = time
+      const elapsed = time - start
+      const delta = Math.min(32, last ? time - last : 16)
+      last = time
+      context.clearRect(0, 0, width, height)
+      const opacity = elapsed < 1900 ? 1 : Math.max(0, 1 - (elapsed - 1900) / 600)
+      particles.forEach(particle => {
+        particle.x += particle.vx * delta
+        particle.y += particle.vy * delta
+        particle.angle += particle.spin * delta
+        context.save()
+        context.globalAlpha = opacity
+        context.fillStyle = particle.color
+        context.translate(particle.x * width, particle.y * height)
+        context.rotate(particle.angle)
+        if (particle.circle) {
+          context.beginPath()
+          context.arc(0, 0, particle.size / 2, 0, Math.PI * 2)
+          context.fill()
+        } else {
+          context.fillRect(-particle.size / 2, -particle.size / 3, particle.size, particle.size * .66)
+        }
+        context.restore()
+      })
+      if (elapsed < 2500) frame = window.requestAnimationFrame(draw)
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    frame = window.requestAnimationFrame(draw)
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener('resize', resize) }
+  }, [])
+  return <canvas className="celebration-confetti" ref={canvasRef} aria-hidden="true" />
+}
+
 function CertificateVerification({ shortId }: { shortId: string }) {
   const [certificate, setCertificate] = useState<CertificateDetails | null>(null)
   const [error, setError] = useState('')
@@ -399,7 +460,7 @@ export default function App() {
     quiz: <motion.section {...variants} className="hero quiz">{showQuizLaunch ? <div className="quiz-launch"><Brand/><QuestionPreparationStatus courseName={assessment?.title ?? 'Cloud Foundations'}/><div><h1>Get set for your <em>assessment.</em></h1><p>Your first question starts in a moment.</p></div><button className="button countdown-button" disabled>Get Started in {startCountdown || '…'}</button><div className="countdown-progress"><i style={{ width: `${(startCountdown / 3) * 100}%` }}/></div><small>Starting automatically</small></div> : assessment ? <><div className="quiz-head"><Brand/><button className="icon" onClick={toggleQuizMusic} aria-label={musicMuted ? 'Turn quiz music on' : 'Mute quiz music'}>{musicMuted ? <VolumeX/> : <Volume2/>}</button></div><div className="progress-label">Question {question + 1} of {assessment.questions.length}</div><div className="progress">{assessment.questions.map((_, i) => <i key={i} className={i <= question ? 'active' : ''}/>)}</div><QuestionTags question={assessment.questions[question]}/><QuestionCode code={assessment.questions[question].codeSnippet}/><h2>{assessment.questions[question].prompt}</h2><div className="choices">{assessment.questions[question].options.map(option => <button key={option.id} onClick={() => choose(option.id)}><i/>{option.label}</button>)}</div><div className="quiz-footer"><button className="theory-button" onClick={() => setTheory(true)}><BookOpen/> Read concept</button><span>Select an answer to continue</span></div>{theory && <Theory close={() => setTheory(false)} text={assessment.questions[question].theory}/>}</> : <><Brand/><h1>Preparing your <em>questions</em></h1><p>{quizError ?? 'Reconnecting to the assessment service.'}</p></>}</motion.section>,
     analysis: <motion.section {...variants} className="hero analysis"><Brand/><div className="analysis-copy"><h1>Analysing your <em>results.</em></h1><p>Checking each response against the assessment standard.</p></div><div className="analysis-ring" style={{ '--analysis-progress': `${(analysisCount / (assessment?.questions.length ?? 5)) * 360}deg` } as CSSProperties}><div><b>{analysisCount}</b><span>of {assessment?.questions.length ?? 5}</span><small>QUESTIONS COMPLETED</small></div></div><div className="analysis-insights"><article className="speed-insight"><i><Zap/></i><b>You are faster than</b><span>60% people</span></article><article><b>{assessment?.questions.length ?? 5} topics</b><span>Answers are ready for review.</span></article></div><small className="analysis-status">Preparing your certificate journey…</small></motion.section>,
     contact: <motion.section {...variants} className="hero contact"><Brand/><h1>Where should we <em>send your certificate?</em></h1><p>We will use these details only for certificate delivery and support.</p><label className="input"><Volume2 size={22}/><input value={mobile} placeholder="Mobile number (Ex: +91 98765 43210)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setMobile(e.target.value); setFormError('') }} aria-label="WhatsApp number" inputMode="tel" autoComplete="tel"/></label><small className="delivery-note">We’ll only WhatsApp your certificate updates — never marketing.</small><label className="input"><Mail size={22}/><input value={email} placeholder="Email address (Ex: rahul@example.com)" onFocus={e => revealFormControl(e.currentTarget)} onBlur={restoreFormPosition} onChange={e => { setEmail(e.target.value); setFormError('') }} aria-label="Email address" inputMode="email" autoComplete="email"/></label><small className="delivery-note">We’ll send your certificate to this email.</small>{formError && <small className="form-error">{formError}</small>}<Button onClick={saveContactDetails}>Save & view result</Button></motion.section>,
-    result: <motion.section {...variants} className="hero result offer-result">{showCelebration && <img className="celebration-confetti" src="https://assets-v2.lottiefiles.com/a/e7d328d2-1170-11ee-9633-4fcbbbd2df22/nh9sIV6an4.gif" alt="" aria-hidden="true"/>}<Brand/>{attemptResult?.passed ? <><h1>{resultHeadlineVariant ? <>Awesome {name.split(' ')[0] || 'there'}! <em>Test completed!</em></> : <>Congrats {name.split(' ')[0] || 'there'}! You scored a <em>great {Math.round(((attemptResult?.score ?? 0) / (attemptResult?.total ?? 5)) * 100)}%!</em></>}</h1><p className="offer-subtitle">Unlock instant certificate to view score &amp; prove you’re in the <em>top 18%</em> of <strong>{assessment?.title ?? 'this course'}</strong>.</p><div className="offer-certificate"><img src={assetUrl('/images/skillcert-certificate-template.webp')} alt="Softly blurred preview of your SkillCert certificate"/><strong className="offer-recipient">Your Name</strong><strong className="offer-course">Course Name</strong><div className="certificate-recognition"><b>This certificate is recognized by 1100+ companies like</b><div><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span></div></div></div><p className="hired-claim"><b>8/10</b> CVs with this certificate got hired</p><div className="offer-sticky"><div className="offer-action"><p className="offer-price"><small>Today only</small><span><b>{price}</b> <s>₹599</s></span></p><button className="button certificate-cta" onClick={beginCheckout} disabled={openingCheckout}>{openingCheckout ? <><LoaderCircle className="button-spinner"/> Opening secure payment…</> : <>Get my certificate {offerTimerSeconds > 0 && <span className="offer-timer"><Clock3 size={17}/>{offerTimerLabel}</span>}<ChevronRight size={22}/></>}</button></div><p className="offer-reservation">Your result is reserved while the timer runs.</p></div></> : <><h1>Keep building your <em>foundation.</em></h1><p>{assessment?.title ?? 'This assessment'} can be attempted again when you’re ready.</p><Button onClick={() => { setQuestion(0); setAnswers([]); setStep('quiz') }}>Try again</Button></>}</motion.section>,
+    result: <motion.section {...variants} className="hero result offer-result">{showCelebration && <CelebrationConfetti/>}<Brand/>{attemptResult?.passed ? <><h1>{resultHeadlineVariant ? <>Awesome {name.split(' ')[0] || 'there'}! <em>Test completed!</em></> : <>Congrats {name.split(' ')[0] || 'there'}! You scored a <em>great {Math.round(((attemptResult?.score ?? 0) / (attemptResult?.total ?? 5)) * 100)}%!</em></>}</h1><p className="offer-subtitle">Unlock instant certificate to view score &amp; prove you’re in the <em>top 18%</em> of <strong>{assessment?.title ?? 'this course'}</strong>.</p><div className="offer-certificate"><img src={assetUrl('/images/skillcert-certificate-template.webp')} alt="Softly blurred preview of your SkillCert certificate"/><strong className="offer-recipient">Your Name</strong><strong className="offer-course">Course Name</strong><div className="certificate-recognition"><b>This certificate is recognized by 1100+ companies like</b><div><span className="google-mark"><i>G</i>Google</span><span className="microsoft-mark"><i><b/><b/><b/><b/></i>Microsoft</span><span className="amazon-mark"><i>a</i>amazon</span><span className="meta-mark"><i>∞</i>Meta</span></div></div></div><p className="hired-claim"><b>8/10</b> CVs with this certificate got hired</p><div className="offer-sticky"><div className="offer-action"><p className="offer-price"><small>Today only</small><span><b>{price}</b> <s>₹599</s></span></p><button className="button certificate-cta" onClick={beginCheckout} disabled={openingCheckout}>{openingCheckout ? <><LoaderCircle className="button-spinner"/> Opening secure payment…</> : <>Get my certificate {offerTimerSeconds > 0 && <span className="offer-timer"><Clock3 size={17}/>{offerTimerLabel}</span>}<ChevronRight size={22}/></>}</button></div><p className="offer-reservation">Your result is reserved while the timer runs.</p></div></> : <><h1>Keep building your <em>foundation.</em></h1><p>{assessment?.title ?? 'This assessment'} can be attempted again when you’re ready.</p><Button onClick={() => { setQuestion(0); setAnswers([]); setStep('quiz') }}>Try again</Button></>}</motion.section>,
     checkout: <motion.section {...variants} className="hero checkout"><Brand/><h1>Complete <em>secure payment</em></h1><p>Unlock your verified credential with a safe, seamless payment.</p><div className="order"><span>Verified Skill Credential</span><strong>Cloud Foundations</strong><small>Recipient: {name} <b>₹18</b></small></div><div className="methods"><button className="selected">UPI</button><button>Card</button><button>Net banking</button></div><div className="payment-qr">▦<span>Pay with any UPI app</span></div><Button onClick={() => setStep('success')}>Pay ₹18 securely</Button><small><LockKeyhole size={14}/> Payments are processed securely by Razorpay</small><button className="demo-fail" onClick={() => setStep('failed')}>Demo: payment failed state</button></motion.section>,
     'payment-processing': <motion.section {...variants} className="hero payment-processing"><Brand/><div className="payment-processing-spinner"><LoaderCircle/></div><h1>Issuing your <em>certificate.</em></h1><p>Payment received. We’re securely verifying it and creating your QR-verifiable certificate now.</p><small>Please don’t close this page.</small></motion.section>,
     success: <motion.section {...variants} className="hero success"><Brand/><div className="success-mark"><Check/></div><h1>Your certificate <em>is ready.</em></h1><p>A verified {issuedCertificate?.courseName ?? assessment?.title ?? 'SkillCert'} certificate has been issued for {name} and sent to <b>{email}</b>.</p><button className="button success-explore" onClick={() => { window.history.pushState({}, '', '/assessments'); setPath('/assessments') }}>Explore more certifications <ChevronRight size={18}/></button></motion.section>,

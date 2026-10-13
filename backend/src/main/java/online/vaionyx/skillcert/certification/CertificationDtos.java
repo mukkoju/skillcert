@@ -11,5 +11,5 @@ public final class CertificationDtos {
   public record Answer(@NotNull UUID questionId, @NotNull UUID optionId) {}
   public record SubmitAttempt(@NotBlank String recipientName, @NotEmpty List<Answer> answers) {}
   public record SaveContact(@NotBlank @Email String email, @NotBlank String mobile) {}
-  public record AttemptResult(UUID attemptId, boolean passed, int score, int total, int passingScore, String credentialStatus) {}
+  public record AttemptResult(UUID attemptId, boolean passed, int score, int total, int passingScore, String credentialStatus, int pricePaise, String priceVariant) {}
 }

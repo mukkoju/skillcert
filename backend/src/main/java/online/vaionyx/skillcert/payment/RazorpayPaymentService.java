@@ -56,7 +56,7 @@ public class RazorpayPaymentService {
       if ("CAPTURED".equals(existing.getStatus())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Credential has already been issued");
       return checkout(existing);
     }
-    int amount = attempt.getCertification().getPricePaise();
+    int amount = attempt.getOfferedPricePaise();
     JsonNode response = razorpay("POST", "/orders", "{\"amount\":" + amount + ",\"currency\":\"INR\",\"receipt\":\"attempt_" + attempt.getId() + "\",\"notes\":{\"attempt_id\":\"" + attempt.getId() + "\"}}");
     Payment payment = payments.save(new Payment(attempt, amount, response.path("id").asText()));
     return checkout(payment);

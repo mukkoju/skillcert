@@ -294,7 +294,7 @@ export default function App() {
         setAssessment(loadedAssessment)
         if (previewScreen) {
           setName('Preview User')
-          setAttemptResult({ attemptId: 'preview-result', passed: true, score: Math.max(loadedAssessment.passingScore, Math.ceil(loadedAssessment.questions.length * .8)), total: loadedAssessment.questions.length, passingScore: loadedAssessment.passingScore, credentialStatus: 'PREVIEW' })
+          setAttemptResult({ attemptId: 'preview-result', passed: true, score: Math.max(loadedAssessment.passingScore, Math.ceil(loadedAssessment.questions.length * .8)), total: loadedAssessment.questions.length, passingScore: loadedAssessment.passingScore, credentialStatus: 'PREVIEW', pricePaise: 19900, priceVariant: 'PREVIEW' })
           setShowQuizLaunch(previewScreen === 'quiz-launch')
           setStep(previewScreen === 'quiz-launch' ? 'quiz' : previewScreen)
         } else {
@@ -434,7 +434,7 @@ export default function App() {
     const timer = window.setTimeout(() => setShowCelebration(false), 3000)
     return () => window.clearTimeout(timer)
   }, [attemptResult?.passed, step])
-  const pricePaise = catalogue.find(item => item.slug === assessment?.slug)?.pricePaise ?? 19900
+  const pricePaise = attemptResult?.pricePaise ?? catalogue.find(item => item.slug === assessment?.slug)?.pricePaise ?? 19900
   const price = `₹${(pricePaise / 100).toLocaleString('en-IN')}`
   const offerTimerLabel = `${Math.floor(offerTimerSeconds / 60).toString().padStart(2, '0')}:${(offerTimerSeconds % 60).toString().padStart(2, '0')}`
   const beginCheckout = async () => {

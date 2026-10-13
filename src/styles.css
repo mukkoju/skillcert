@@ -128,6 +128,9 @@
 .offer-sticky{margin:auto -28px 0;padding:9px 10px max(4px,env(safe-area-inset-bottom))}
 .certificate-cta{font-size:16px}
 .offer-price s{display:block}
+.input input{font-size:14px}
+.offer-certificate>img{filter:blur(1px)}
+.offer-reservation{margin:0;font-size:10px}
 
 /* Make payment hand-offs explicit and prevent duplicate checkout taps. */
 .certificate-cta:disabled{cursor:wait;opacity:.82}.certificate-cta:disabled{white-space:nowrap;font-size:clamp(13px,4vw,16px)}.certificate-cta:disabled .button-spinner{width:18px;height:18px;flex:0 0 auto}.button-spinner{animation:payment-spin .9s linear infinite}.payment-processing{align-items:center;justify-content:center;text-align:center;gap:21px}.payment-processing .brand{align-self:center}.payment-processing-spinner{display:grid;place-items:center;width:108px;height:108px;border-radius:50%;color:#19c9ff;background:radial-gradient(circle,#123e71 0,#0a2448 62%,#061a35 100%);box-shadow:0 0 38px #13c5ff70}.payment-processing-spinner svg{width:50px;height:50px;animation:payment-spin 1s linear infinite}.payment-processing p{max-width:380px}.payment-processing small{color:#91a8c9;font-size:13px}.success-explore{width:auto;min-height:50px;padding:13px 18px;font-size:16px;margin-top:8px}@keyframes payment-spin{to{transform:rotate(360deg)}}

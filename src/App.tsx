@@ -340,6 +340,8 @@ export default function App() {
     if (step !== 'quiz' || !showQuizLaunch) return
     setStartCountdown(3)
     playExamTone()
+    // Keep a light countdown pulse going until the question screen takes over.
+    const beepTimer = window.setInterval(playExamTone, 360)
     let timer = 0
     timer = window.setInterval(() => {
       setStartCountdown(current => {
@@ -348,11 +350,10 @@ export default function App() {
           window.setTimeout(() => setShowQuizLaunch(false), 160)
           return 0
         }
-        playExamTone()
         return current - 1
       })
     }, 1000)
-    return () => window.clearInterval(timer)
+    return () => { window.clearInterval(timer); window.clearInterval(beepTimer) }
   }, [showQuizLaunch, step])
   useEffect(() => {
     // Keep the ambience continuous from the "Get started" countdown through

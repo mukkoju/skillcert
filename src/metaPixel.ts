@@ -38,3 +38,7 @@ export function initialiseMetaPixel() {
 export function trackPixel(event: string, parameters?: PixelParameters) {
   window.fbq?.('track', event, parameters)
 }
+
+export function trackCustomPixel(event: string, parameters?: PixelParameters) {
+  window.fbq?.('trackCustom', event, parameters)
+}

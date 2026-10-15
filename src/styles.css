@@ -126,7 +126,7 @@
 /* Compact the sticky certificate offer on mobile without changing its content. */
 .input{min-height:60px;padding:0 14px}
 .offer-sticky{margin:auto -28px 0;padding:9px 10px max(4px,env(safe-area-inset-bottom))}
-.certificate-cta{font-size:16px}
+.certificate-cta{font-size:14px}.certificate-cta-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .offer-price s{display:block}
 .input input{font-size:14px}
 .offer-certificate>img{filter:blur(1px)}

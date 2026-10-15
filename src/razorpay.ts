@@ -26,7 +26,7 @@ export async function openRazorpayCheckout(order: RazorpayOrder, onSuccess: (res
     name: 'SkillCert by VAIONYX',
     description: `${order.courseName} credential`,
     order_id: order.razorpayOrderId,
-    prefill: { name: order.recipientName },
+    prefill: { name: order.recipientName, email: order.recipientEmail ?? undefined, contact: order.recipientMobile ?? undefined },
     notes: { attempt_id: order.attemptId },
     theme: { color: '#126de8' },
     handler: onSuccess,

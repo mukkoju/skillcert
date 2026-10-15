@@ -3,7 +3,7 @@ export type AssessmentQuestion = { id: string; prompt: string; theory: string | 
 export type Assessment = { slug: string; title: string; questionCount: number; passingScore: number; questions: AssessmentQuestion[] }
 export type AttemptResult = { attemptId: string; passed: boolean; score: number; total: number; passingScore: number; credentialStatus: string; pricePaise: number; priceVariant: string }
 export type CertificationSummary = { slug: string; title: string; description: string; durationMinutes: number; questionCount: number; passingScore: number; pricePaise: number; category: string }
-export type RazorpayOrder = { attemptId: string; razorpayOrderId: string; amountPaise: number; currency: string; keyId: string; recipientName: string; courseName: string }
+export type RazorpayOrder = { attemptId: string; razorpayOrderId: string; amountPaise: number; currency: string; keyId: string; recipientName: string; recipientEmail: string | null; recipientMobile: string | null; courseName: string }
 export type CertificateDetails = { shortId: string; recipientName: string; certificationSlug: string; courseName: string; score: number; totalQuestions: number; issuedAt: string; status: string; verificationUrl: string; pngUrl: string; pdfUrl: string }
 
 // Never let a production build fall back to localhost. On Android, a localhost

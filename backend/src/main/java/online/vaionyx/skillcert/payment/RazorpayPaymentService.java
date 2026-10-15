@@ -105,7 +105,7 @@ public class RazorpayPaymentService {
 
   private PaymentDtos.CheckoutOrder checkout(Payment payment) {
     Attempt attempt = payment.getAttempt();
-    return new PaymentDtos.CheckoutOrder(attempt.getId(), payment.getRazorpayOrderId(), payment.getAmountPaise(), "INR", keyId, attempt.getRecipientName(), attempt.getCertification().getTitle());
+    return new PaymentDtos.CheckoutOrder(attempt.getId(), payment.getRazorpayOrderId(), payment.getAmountPaise(), "INR", keyId, attempt.getRecipientName(), attempt.getRecipientEmail(), attempt.getRecipientMobile(), attempt.getCertification().getTitle());
   }
 
   private JsonNode razorpay(String method, String path, String body) {

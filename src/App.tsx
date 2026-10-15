@@ -457,7 +457,9 @@ export default function App() {
         try {
           const certificate = await verifyRazorpayPayment({ attemptId: order.attemptId, razorpayPaymentId: response.razorpay_payment_id, razorpayOrderId: response.razorpay_order_id, razorpaySignature: response.razorpay_signature })
           setIssuedCertificate(certificate)
-          trackPixel('Purchase', { content_name: certificate.courseName, value: pricePaise / 100, currency: 'INR' })
+          const purchaseParameters = { content_name: certificate.courseName, value: pricePaise / 100, currency: 'INR', cta_variant: certificateCtaVariant.id }
+          trackPixel('Purchase', purchaseParameters)
+          trackCustomPixel(`${certificateCtaVariant.event}Purchase`, purchaseParameters)
           setStep('success')
         } catch (error) { setPaymentError(error instanceof Error ? error.message : 'Unable to verify payment.'); setStep('failed') }
       }, () => setOpeningCheckout(false))

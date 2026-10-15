@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, BookOpen, Brain, Check, ChevronRight, Clock3, Cloud, Code2, Database, LoaderCircle, LockKeyhole, Mail, Megaphone, Palette, Search, ShieldCheck, Volume2, VolumeX, Workflow, X, Zap } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, loadIssuedCertificate, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AssessmentQuestion, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
+import { apiBase, createRazorpayOrder, loadAssessment, loadCertifications, loadIssuedCertificate, saveAttemptAudit, saveAttemptContact, submitAttempt, verifyRazorpayPayment, type Assessment, type AssessmentQuestion, type AttemptResult, type CertificateDetails, type CertificationSummary } from './api'
 import { initialiseMetaPixel, trackCustomPixel, trackPixel } from './metaPixel'
 import { openRazorpayCheckout } from './razorpay'
 
@@ -13,6 +13,35 @@ const previewScreens: readonly PreviewScreen[] = ['intro', 'name', 'preparing-co
 const variants = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -18 } }
 const assetBaseUrl = (import.meta.env.VITE_ASSET_BASE_URL ?? (import.meta.env.PROD ? 'https://assets.vaionyxsolutions.online' : '')).replace(/\/$/, '')
 const assetUrl = (path: string) => assetBaseUrl ? `${assetBaseUrl}${path}` : path
+
+function buildAttemptAudit(landingAt: string, assessmentStartedAt: string | null) {
+  const params = new URLSearchParams(window.location.search)
+  const userAgent = navigator.userAgent
+  const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB/i.test(userAgent)
+  const browser = /SamsungBrowser/i.test(userAgent) ? 'Samsung Internet'
+    : /Edg\//i.test(userAgent) ? 'Edge'
+      : /CriOS|Chrome/i.test(userAgent) ? 'Chrome'
+        : /Firefox/i.test(userAgent) ? 'Firefox'
+          : /Safari/i.test(userAgent) ? 'Safari' : 'Other'
+  const operatingSystem = /Android/i.test(userAgent) ? 'Android'
+    : /iPhone|iPad|iPod/i.test(userAgent) ? 'iOS'
+      : /Windows/i.test(userAgent) ? 'Windows'
+        : /Mac OS/i.test(userAgent) ? 'macOS' : 'Other'
+  const deviceType = /Mobi|Android|iPhone|iPad/i.test(userAgent) ? 'Mobile' : 'Desktop'
+  return {
+    source: params.get('utm_source') ?? (document.referrer ? 'referral' : 'direct'),
+    utmSource: params.get('utm_source') ?? undefined,
+    utmMedium: params.get('utm_medium') ?? undefined,
+    utmCampaign: params.get('utm_campaign') ?? undefined,
+    utmContent: params.get('utm_content') ?? undefined,
+    utmTerm: params.get('utm_term') ?? undefined,
+    referrer: document.referrer || undefined,
+    browser, operatingSystem, deviceType, inAppBrowser,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    viewportWidth: window.innerWidth || undefined,
+    landingAt, assessmentStartedAt: assessmentStartedAt ?? undefined, assessmentCompletedAt: new Date().toISOString(),
+  }
+}
 
 function Brand() { return <div className="brand"><img src={assetUrl('/images/skillcert-logo.webp')} alt="SkillCert by VAIONYX"/></div> }
 function Button({ children, onClick, secondary = false }: { children: React.ReactNode, onClick?: () => void, secondary?: boolean }) { return <button className={`button ${secondary ? 'secondary' : ''}`} onClick={onClick}>{children}<ChevronRight size={22}/></button> }
@@ -130,6 +159,8 @@ export default function App() {
   const previewScreen = previewScreens.includes(previewValue as PreviewScreen) ? previewValue as PreviewScreen : null
   const audioContext = useRef<AudioContext | null>(null)
   const quizMusic = useRef<HTMLAudioElement | null>(null)
+  const landingAt = useRef(new Date().toISOString())
+  const assessmentStartedAt = useRef<string | null>(null)
   const formScrollTimer = useRef<number | null>(null)
   const revealFormControl = (control: HTMLElement) => {
     // Mobile browsers resize at different points while their keyboard opens.
@@ -158,6 +189,7 @@ export default function App() {
   const startPreparation = () => {
     if (!name.trim()) { setFormError('Enter the name you want printed on your certificate.'); return }
     setName(name.trim())
+    assessmentStartedAt.current = new Date().toISOString()
     trackPixel('StartAssessment', { content_name: assessment?.title ?? courseSlug ?? 'SkillCert assessment' })
     setFormError('')
     try {
@@ -394,6 +426,7 @@ export default function App() {
     setStep('analysis')
     try {
       const result = await submitAttempt(assessment.slug, name, nextAnswers)
+      void saveAttemptAudit(result.attemptId, buildAttemptAudit(landingAt.current, assessmentStartedAt.current)).catch(() => undefined)
       setAttemptResult(result)
       trackPixel('CompleteRegistration', { content_name: assessment.title, status: result.passed ? 'passed' : 'not_passed' })
     } catch (error) { setQuizError(error instanceof Error ? error.message : 'Unable to submit this assessment.'); setStep('quiz') }

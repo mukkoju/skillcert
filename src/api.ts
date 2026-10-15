@@ -5,6 +5,7 @@ export type AttemptResult = { attemptId: string; passed: boolean; score: number;
 export type CertificationSummary = { slug: string; title: string; description: string; durationMinutes: number; questionCount: number; passingScore: number; pricePaise: number; category: string }
 export type RazorpayOrder = { attemptId: string; razorpayOrderId: string; amountPaise: number; currency: string; keyId: string; recipientName: string; recipientEmail: string | null; recipientMobile: string | null; courseName: string }
 export type CertificateDetails = { shortId: string; recipientName: string; certificationSlug: string; courseName: string; score: number; totalQuestions: number; issuedAt: string; status: string; verificationUrl: string; pngUrl: string; pdfUrl: string }
+export type AttemptAudit = { source?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; utmContent?: string; utmTerm?: string; referrer?: string; browser?: string; operatingSystem?: string; deviceType?: string; inAppBrowser?: boolean; country?: string; state?: string; city?: string; timezone?: string; viewportWidth?: number; landingAt?: string; assessmentStartedAt?: string; assessmentCompletedAt?: string }
 
 // Never let a production build fall back to localhost. On Android, a localhost
 // request can trigger Chrome's "access other apps and services" permission.
@@ -45,6 +46,13 @@ export async function saveAttemptContact(attemptId: string, email: string, mobil
     body: JSON.stringify({ email, mobile }),
   })
   if (!response.ok) throw new Error('Unable to save your contact details. Please try again.')
+}
+
+export async function saveAttemptAudit(attemptId: string, audit: AttemptAudit): Promise<void> {
+  const response = await fetch(`${apiBase}/certifications/attempts/${attemptId}/audit`, {
+    headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(audit), keepalive: true,
+  })
+  if (!response.ok) throw new Error('Unable to save assessment audit.')
 }
 
 export async function verifyRazorpayPayment(payload: { attemptId: string; razorpayPaymentId: string; razorpayOrderId: string; razorpaySignature: string }): Promise<CertificateDetails> {

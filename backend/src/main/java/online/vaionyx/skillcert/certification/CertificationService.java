@@ -10,8 +10,8 @@ import static online.vaionyx.skillcert.certification.CertificationDtos.*;
 
 @Service
 public class CertificationService {
-  private final CertificationRepository certifications; private final QuestionRepository questions; private final QuestionOptionRepository options; private final AttemptRepository attempts;
-  public CertificationService(CertificationRepository certifications, QuestionRepository questions, QuestionOptionRepository options, AttemptRepository attempts) { this.certifications=certifications; this.questions=questions; this.options=options; this.attempts=attempts; }
+  private final CertificationRepository certifications; private final QuestionRepository questions; private final QuestionOptionRepository options; private final AttemptRepository attempts; private final AttemptAuditRepository attemptAudits;
+  public CertificationService(CertificationRepository certifications, QuestionRepository questions, QuestionOptionRepository options, AttemptRepository attempts, AttemptAuditRepository attemptAudits) { this.certifications=certifications; this.questions=questions; this.options=options; this.attempts=attempts; this.attemptAudits=attemptAudits; }
   public List<CertificationSummary> list() { return certifications.findByPublishedTrueOrderByTitleAsc().stream().map(this::summary).toList(); }
   public Assessment assessment(String slug) {
     Certification certification = active(slug); List<Question> questionList = questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId());
@@ -34,6 +34,12 @@ public class CertificationService {
     String mobileDigits = request.mobile().replaceAll("\\D", "");
     if (mobileDigits.length() < 10) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter a valid mobile number");
     attempt.setContactDetails(request.email().trim().toLowerCase(Locale.ROOT), request.mobile().trim());
+  }
+  @Transactional
+  public void saveAudit(UUID attemptId, SaveAttemptAudit request) {
+    if (attemptAudits.existsByAttemptId(attemptId)) return;
+    Attempt attempt = attempts.findById(attemptId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assessment attempt not found"));
+    attemptAudits.save(new AttemptAudit(attempt, request));
   }
   private Certification active(String slug) { return certifications.findBySlugAndPublishedTrue(slug).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found")); }
   private CertificationSummary summary(Certification c) { return new CertificationSummary(c.getSlug(),c.getTitle(),c.getDescription(),c.getDurationMinutes(),c.getQuestionCount(),c.getPassingScore(),c.getPricePaise(),c.getCategory()); }

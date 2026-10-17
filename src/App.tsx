@@ -43,7 +43,12 @@ function buildAttemptAudit(landingAt: string, assessmentStartedAt: string | null
   }
 }
 
-function Brand() { return <div className="brand"><img src={assetUrl('/images/skillcert-logo.webp')} alt="SkillCert by VAIONYX"/></div> }
+function Brand() {
+  return <div className="brand">
+    <img className="brand-logo" src={assetUrl('/images/skillcert-logo.webp')} alt="SkillCert by VAIONYX"/>
+    <img className="brand-badge" src={assetUrl('/images/skillcert-logo.webp')} alt="" aria-hidden="true"/>
+  </div>
+}
 function Button({ children, onClick, secondary = false }: { children: React.ReactNode, onClick?: () => void, secondary?: boolean }) { return <button className={`button ${secondary ? 'secondary' : ''}`} onClick={onClick}>{children}<ChevronRight size={22}/></button> }
 function QuestionPreparationStatus({ courseName }: { courseName: string }) { return <div className="question-prep-status"><i/><span>Preparing short questions for <b>{courseName}</b></span></div> }
 function QuestionTags({ question }: { question: AssessmentQuestion }) { return <div className="question-tags"><span>{question.topic}</span><span>{question.difficulty}</span>{question.askedByCompany ? <span>Asked by {question.askedByCompany}</span> : <span>Industry-style practice</span>}</div> }

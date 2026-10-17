@@ -46,7 +46,7 @@ function buildAttemptAudit(landingAt: string, assessmentStartedAt: string | null
 function Brand() {
   return <div className="brand">
     <img className="brand-logo" src={assetUrl('/images/skillcert-logo.webp')} alt="SkillCert by VAIONYX"/>
-    <img className="brand-badge" src={assetUrl('/images/skillcert-logo.webp')} alt="" aria-hidden="true"/>
+    <img className="brand-badge" src={assetUrl('/images/msme-registered-badge-round.webp')} alt="msme" aria-hidden="true"/>
   </div>
 }
 function Button({ children, onClick, secondary = false }: { children: React.ReactNode, onClick?: () => void, secondary?: boolean }) { return <button className={`button ${secondary ? 'secondary' : ''}`} onClick={onClick}>{children}<ChevronRight size={22}/></button> }

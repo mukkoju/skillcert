@@ -121,12 +121,12 @@
 @media(max-width:799px){.intro-certificate-name{font-size:clamp(10px,3.4vw,17px)}.intro-certificate-course{font-size:clamp(8px,2.3vw,12px)}.employer-mark{padding:6px}}
 
 /* Keep purchase action reachable on the mobile certificate result. */
-.offer-sticky{display:grid;gap:3px;width:calc(100% + 56px);margin:0 -28px;padding:16px 28px max(14px,env(safe-area-inset-bottom));position:sticky;bottom:0;z-index:2;margin-top:auto;border-top:1px solid #1a4a73;background:linear-gradient(180deg,transparent 0,#031127 28%)}
+.offer-sticky{display:grid;gap:3px;width:calc(100% + 40px);margin:0 -20px;padding:16px 20px max(14px,env(safe-area-inset-bottom));position:sticky;bottom:0;z-index:2;margin-top:auto;border-top:1px solid #1a4a73;background:linear-gradient(180deg,transparent 0,#031127 28%)}
 @media(max-width:799px){.offer-result{min-height:100dvh;padding-bottom:0}.offer-result .hired-claim{margin-bottom:0}}
 
 /* Compact the sticky certificate offer on mobile without changing its content. */
 .input{min-height:60px;padding:0 14px}
-.offer-sticky{margin:auto -28px 0;padding:9px 10px max(4px,env(safe-area-inset-bottom))}
+.offer-sticky{margin:auto -20px 0;padding:9px 20px max(4px,env(safe-area-inset-bottom))}
 .certificate-cta{font-size:14px}.certificate-cta-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .offer-price s{display:block}
 .input input{font-size:14px}

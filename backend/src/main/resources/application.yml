@@ -31,3 +31,8 @@ app:
   r2-secret-access-key: ${R2_SECRET_ACCESS_KEY:}
   r2-bucket-name: ${R2_BUCKET_NAME:}
   r2-public-base-url: ${R2_PUBLIC_BASE_URL:}
+  instagram:
+    daily-publish-enabled: ${INSTAGRAM_DAILY_PUBLISH_ENABLED:false}
+    access-token: ${INSTAGRAM_ACCESS_TOKEN:}
+    account-id: ${INSTAGRAM_ACCOUNT_ID:}
+    media-url: ${INSTAGRAM_MEDIA_URL:https://assets.vaionyxsolutions.online/images/skillcert-certificate-template.webp}

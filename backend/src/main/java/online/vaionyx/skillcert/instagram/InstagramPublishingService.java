@@ -22,6 +22,7 @@ public class InstagramPublishingService {
   private static final String API = "https://graph.instagram.com";
 
   private final InstagramPublicationRepository publications;
+  private final InstagramPostImageService images;
   private final RestClient http = RestClient.create();
   private final boolean enabled;
   private final String accessToken;
@@ -30,11 +31,13 @@ public class InstagramPublishingService {
 
   public InstagramPublishingService(
       InstagramPublicationRepository publications,
+      InstagramPostImageService images,
       @Value("${app.instagram.daily-publish-enabled:false}") boolean enabled,
       @Value("${app.instagram.access-token:}") String accessToken,
       @Value("${app.instagram.account-id:}") String accountId,
       @Value("${app.instagram.media-url:}") String mediaUrl) {
     this.publications = publications;
+    this.images = images;
     this.enabled = enabled;
     this.accessToken = accessToken;
     this.accountId = accountId;
@@ -57,9 +60,11 @@ public class InstagramPublishingService {
       return;
     }
 
-    String caption = captions().get(today.getDayOfYear() % captions().size());
+    PostTheme theme = themes().get(today.getDayOfYear() % themes().size());
+    String caption = theme.caption();
+    String dailyMediaUrl = images.createAndStore(today, theme);
     JsonNode container = post("/" + accountId + "/media", form(
-        "image_url", mediaUrl,
+        "image_url", dailyMediaUrl == null ? mediaUrl : dailyMediaUrl,
         "caption", caption,
         "access_token", accessToken));
     String containerId = requiredId(container, "Instagram media container");
@@ -94,14 +99,16 @@ public class InstagramPublishingService {
     return id;
   }
 
-  private static List<String> captions() {
+  static record PostTheme(String headline, String subheadline, String detail, String caption) {}
+
+  private static List<PostTheme> themes() {
     return List.of(
-        "Build proof, not just promises.\n\nTake a SkillCert assessment, earn a verifiable certificate, and share your skills with confidence.\n\n#SkillCert #CareerGrowth #SoftwareDeveloper",
-        "Your next opportunity may begin with proof of what you know.\n\nAssess your skills. Earn your SkillCert. Share it with confidence.\n\n#SkillCert #Upskilling #TechCareers",
-        "Five focused minutes can become a stronger profile.\n\nTake the assessment and unlock your verified SkillCert certificate.\n\n#SkillCert #ProfessionalDevelopment #CareerReady",
-        "Skills deserve to be seen.\n\nTurn what you know into a shareable, verifiable SkillCert certificate.\n\n#SkillCert #LinkedInProfile #CareerGrowth",
-        "Ready to show what you know?\n\nTake a SkillCert assessment today and add proof of your skills to your next application.\n\n#SkillCert #JobSearch #SoftwareEngineering",
-        "Learn. Assess. Verify. Share.\n\nSkillCert helps you turn knowledge into a credential you can be proud to show.\n\n#SkillCert #TechSkills #CareerDevelopment",
-        "A certificate is more powerful when it is verifiable.\n\nShow your completed SkillCert assessment on your résumé and LinkedIn.\n\n#SkillCert #ResumeTips #LinkedInTips");
+        new PostTheme("PROVE YOUR", "SKILLS", "Turn what you know into proof you can share.", "Build proof, not just promises.\n\nTake a SkillCert assessment, earn a verifiable certificate, and share your skills with confidence.\n\n#SkillCert #CareerGrowth #SoftwareDeveloper"),
+        new PostTheme("YOUR NEXT ROLE", "STARTS WITH PROOF", "Assess your skills. Earn your SkillCert.", "Your next opportunity may begin with proof of what you know.\n\nAssess your skills. Earn your SkillCert. Share it with confidence.\n\n#SkillCert #Upskilling #TechCareers"),
+        new PostTheme("FIVE MINUTES.", "STRONGER PROFILE.", "Show recruiters more than a claim.", "Five focused minutes can become a stronger profile.\n\nTake the assessment and unlock your verified SkillCert certificate.\n\n#SkillCert #ProfessionalDevelopment #CareerReady"),
+        new PostTheme("SKILLS DESERVE", "TO BE SEEN", "Make your knowledge easier to notice.", "Skills deserve to be seen.\n\nTurn what you know into a shareable, verifiable SkillCert certificate.\n\n#SkillCert #LinkedInProfile #CareerGrowth"),
+        new PostTheme("READY TO SHOW", "WHAT YOU KNOW?", "A stronger application starts here.", "Ready to show what you know?\n\nTake a SkillCert assessment today and add proof of your skills to your next application.\n\n#SkillCert #JobSearch #SoftwareEngineering"),
+        new PostTheme("LEARN. ASSESS.", "VERIFY. SHARE.", "Your knowledge has a next step.", "Learn. Assess. Verify. Share.\n\nSkillCert helps you turn knowledge into a credential you can be proud to show.\n\n#SkillCert #TechSkills #CareerDevelopment"),
+        new PostTheme("CERTIFIED AND", "VERIFIABLE", "Made to be shared on your career journey.", "A certificate is more powerful when it is verifiable.\n\nShow your completed SkillCert assessment on your résumé and LinkedIn.\n\n#SkillCert #ResumeTips #LinkedInTips"));
   }
 }

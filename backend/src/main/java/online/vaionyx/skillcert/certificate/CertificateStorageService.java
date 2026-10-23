@@ -87,18 +87,6 @@ public class CertificateStorageService {
     return objectKey == null || publicBaseUrl.isBlank() ? null : publicBaseUrl + "/" + objectKey;
   }
 
-  /** Stores a public marketing image in the same controlled R2 bucket as certificate assets. */
-  public String storePublicImage(String objectKey, byte[] image, String contentType) {
-    requireConfigured();
-    try (S3Client r2 = client()) {
-      r2.putObject(PutObjectRequest.builder().bucket(bucket).key(objectKey).contentType(contentType)
-          .cacheControl("public, max-age=31536000, immutable").build(), RequestBody.fromBytes(image));
-      return publicUrl(objectKey);
-    } catch (Exception exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Marketing image storage could not be reached");
-    }
-  }
-
   private CertificateRequest request(IssuedCertificate certificate) {
     return new CertificateRequest(certificate.getRecipientName(), certificate.getCertification().getTitle(), certificate.getShortId(),
         certificate.getIssuedAt().atZone(ZoneOffset.UTC).toLocalDate(), verificationBaseUrl + certificate.getShortId());

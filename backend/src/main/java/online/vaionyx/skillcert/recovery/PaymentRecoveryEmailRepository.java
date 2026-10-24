@@ -5,6 +5,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PaymentRecoveryEmailRepository extends JpaRepository<PaymentRecoveryEmail, UUID> {
-  boolean existsByAttemptIdAndStage(UUID attemptId, String stage);
+  Optional<PaymentRecoveryEmail> findByAttemptIdAndStage(UUID attemptId, String stage);
   Optional<PaymentRecoveryEmail> findByResumeToken(String resumeToken);
 }

@@ -19,11 +19,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class PaymentRecoveryService {
+  private static final Logger log = LoggerFactory.getLogger(PaymentRecoveryService.class);
   private static final URI RESEND_EMAILS = URI.create("https://api.resend.com/emails");
   private static final SecureRandom RANDOM = new SecureRandom();
   private static final List<ReminderStage> STAGES = List.of(
@@ -71,24 +73,28 @@ public class PaymentRecoveryService {
       for (Attempt attempt : attemptsDue) {
         try {
           sendIfNeeded(attempt, stage);
-        } catch (Exception ignored) {
-          // A later scheduler pass retries transient Resend or network failures.
+        } catch (Exception failure) {
+          log.warn("Payment recovery email failed for attempt {} at stage {}. It will be retried.", attempt.getId(), stage.code(), failure);
         }
       }
     }
   }
 
-  @Transactional
   public void sendIfNeeded(Attempt attempt, ReminderStage stage) {
-    if (reminders.existsByAttemptIdAndStage(attempt.getId(), stage.code())) return;
-    PaymentRecoveryEmail reminder = new PaymentRecoveryEmail(attempt, stage.code(), newToken());
-    try {
-      reminders.saveAndFlush(reminder);
-    } catch (DataIntegrityViolationException alreadyCreated) {
-      return;
+    PaymentRecoveryEmail reminder = reminders.findByAttemptIdAndStage(attempt.getId(), stage.code()).orElse(null);
+    if (reminder != null && reminder.getSentAt() != null) return;
+    if (reminder == null) {
+      reminder = new PaymentRecoveryEmail(attempt, stage.code(), newToken());
+      try {
+        reminder = reminders.saveAndFlush(reminder);
+      } catch (DataIntegrityViolationException alreadyCreated) {
+        reminder = reminders.findByAttemptIdAndStage(attempt.getId(), stage.code()).orElseThrow(() -> alreadyCreated);
+        if (reminder.getSentAt() != null) return;
+      }
     }
     send(reminder, stage);
     reminder.markSent();
+    reminders.saveAndFlush(reminder);
   }
 
   public PaymentRecoveryEmail requireByToken(String token) {

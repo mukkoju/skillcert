@@ -74,7 +74,7 @@ public class PaymentRecoveryService {
         try {
           sendIfNeeded(attempt, stage);
         } catch (Exception failure) {
-          log.warn("Payment recovery email failed for attempt {} at stage {}. It will be retried.", attempt.getId(), stage.code(), failure);
+          log.warn("Payment recovery email failed for attempt {} at stage {}.", attempt.getId(), stage.code(), failure);
         }
       }
     }
@@ -92,9 +92,19 @@ public class PaymentRecoveryService {
         if (reminder.getSentAt() != null) return;
       }
     }
-    send(reminder, stage);
-    reminder.markSent();
+    if (!reminder.beginDeliveryAttempt()) return;
     reminders.saveAndFlush(reminder);
+    try {
+      send(reminder, stage);
+      reminder.markSent();
+      reminders.saveAndFlush(reminder);
+    } catch (RuntimeException failure) {
+      if (reminder.hasReachedDeliveryLimit()) {
+        reminder.markFailed();
+        reminders.saveAndFlush(reminder);
+      }
+      throw failure;
+    }
   }
 
   public PaymentRecoveryEmail requireByToken(String token) {

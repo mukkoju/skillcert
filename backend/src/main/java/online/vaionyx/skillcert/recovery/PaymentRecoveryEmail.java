@@ -20,6 +20,8 @@ public class PaymentRecoveryEmail {
   @Column(nullable = false) private String stage;
   @Column(name = "resume_token", nullable = false, unique = true) private String resumeToken;
   @Column(name = "sent_at") private Instant sentAt;
+  @Column(name = "delivery_attempts", nullable = false) private int deliveryAttempts;
+  @Column(name = "failed_at") private Instant failedAt;
   @Column(name = "created_at", nullable = false) private Instant createdAt;
 
   protected PaymentRecoveryEmail() {}
@@ -35,5 +37,13 @@ public class PaymentRecoveryEmail {
   public String getStage() { return stage; }
   public String getResumeToken() { return resumeToken; }
   public Instant getSentAt() { return sentAt; }
+  public int getDeliveryAttempts() { return deliveryAttempts; }
+  public boolean hasReachedDeliveryLimit() { return deliveryAttempts >= 3; }
+  public boolean beginDeliveryAttempt() {
+    if (hasReachedDeliveryLimit()) return false;
+    deliveryAttempts++;
+    return true;
+  }
   public void markSent() { this.sentAt = Instant.now(); }
+  public void markFailed() { this.failedAt = Instant.now(); }
 }

@@ -27,7 +27,7 @@ public class PaymentRecoveryService {
   private static final URI RESEND_EMAILS = URI.create("https://api.resend.com/emails");
   private static final SecureRandom RANDOM = new SecureRandom();
   private static final List<ReminderStage> STAGES = List.of(
-      new ReminderStage("FIRST", Duration.ofMinutes(30), "Your SkillCert result is ready — unlock your certificate"),
+      new ReminderStage("FIRST", Duration.ofMinutes(3), "Your SkillCert result is ready — unlock your certificate"),
       new ReminderStage("SECOND", Duration.ofHours(6), "Your verified SkillCert certificate is ready to unlock"),
       new ReminderStage("FINAL", Duration.ofHours(24), "Final reminder: unlock your SkillCert certificate"));
 

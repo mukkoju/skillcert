@@ -33,6 +33,7 @@ public class PaymentRecoveryService {
 
   private final AttemptRepository attempts;
   private final PaymentRecoveryEmailRepository reminders;
+  private final PaymentRecoverySettingsRepository settings;
   private final ObjectMapper json;
   private final String apiKey;
   private final String fromEmail;
@@ -43,6 +44,7 @@ public class PaymentRecoveryService {
   public PaymentRecoveryService(
       AttemptRepository attempts,
       PaymentRecoveryEmailRepository reminders,
+      PaymentRecoverySettingsRepository settings,
       ObjectMapper json,
       @Value("${app.resend-api-key:}") String apiKey,
       @Value("${app.certificate-from-email:}") String fromEmail,
@@ -50,6 +52,7 @@ public class PaymentRecoveryService {
       @Value("${app.payment-recovery-enabled:false}") boolean enabled) {
     this.attempts = attempts;
     this.reminders = reminders;
+    this.settings = settings;
     this.json = json;
     this.apiKey = apiKey;
     this.fromEmail = fromEmail;
@@ -60,8 +63,11 @@ public class PaymentRecoveryService {
   @Scheduled(fixedDelayString = "PT5M", initialDelayString = "PT1M")
   public void sendDueReminders() {
     if (!enabled || apiKey.isBlank() || fromEmail.isBlank()) return;
+    Instant recoveryStartedAt = settings.findById((short) 1)
+        .orElseGet(() -> settings.saveAndFlush(new PaymentRecoverySettings(Instant.now())))
+        .getActivatedAt();
     for (ReminderStage stage : STAGES) {
-      List<Attempt> attemptsDue = attempts.findUnpaidCompletedBefore(Instant.now().minus(stage.delay()));
+      List<Attempt> attemptsDue = attempts.findUnpaidCompletedBefore(recoveryStartedAt, Instant.now().minus(stage.delay()));
       for (Attempt attempt : attemptsDue) {
         try {
           sendIfNeeded(attempt, stage);

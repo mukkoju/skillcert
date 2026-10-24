@@ -2,6 +2,7 @@ export type AssessmentOption = { id: string; label: string }
 export type AssessmentQuestion = { id: string; prompt: string; theory: string | null; topic: string; difficulty: string; askedByCompany: string | null; codeSnippet: string | null; options: AssessmentOption[] }
 export type Assessment = { slug: string; title: string; questionCount: number; passingScore: number; questions: AssessmentQuestion[] }
 export type AttemptResult = { attemptId: string; passed: boolean; score: number; total: number; passingScore: number; credentialStatus: string; pricePaise: number; priceVariant: string }
+export type RecoveryAttempt = { certificationSlug: string; recipientName: string; recipientEmail: string | null; recipientMobile: string | null; result: AttemptResult }
 export type CertificationSummary = { slug: string; title: string; description: string; durationMinutes: number; questionCount: number; passingScore: number; pricePaise: number; category: string }
 export type RazorpayOrder = { attemptId: string; razorpayOrderId: string; amountPaise: number; currency: string; keyId: string; recipientName: string; recipientEmail: string | null; recipientMobile: string | null; courseName: string }
 export type CertificateDetails = { shortId: string; recipientName: string; certificationSlug: string; courseName: string; score: number; totalQuestions: number; issuedAt: string; status: string; verificationUrl: string; pngUrl: string; pdfUrl: string }
@@ -30,6 +31,12 @@ export async function loadCertifications(): Promise<CertificationSummary[]> {
 export async function submitAttempt(slug: string, recipientName: string, answers: { questionId: string; optionId: string }[]): Promise<AttemptResult> {
   const response = await fetch(`${apiBase}/certifications/${slug}/attempts`, { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify({ recipientName, answers }) })
   if (!response.ok) throw new Error('Unable to submit this assessment.')
+  return response.json()
+}
+
+export async function loadRecoveryAttempt(token: string): Promise<RecoveryAttempt> {
+  const response = await fetch(`${apiBase}/certifications/recovery/${encodeURIComponent(token)}`)
+  if (!response.ok) throw new Error('This result link is no longer available.')
   return response.json()
 }
 

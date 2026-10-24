@@ -2,6 +2,9 @@ package online.vaionyx.skillcert.certification;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import online.vaionyx.skillcert.payment.PaymentRepository;
+import online.vaionyx.skillcert.recovery.PaymentRecoveryEmail;
+import online.vaionyx.skillcert.recovery.PaymentRecoveryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,8 +13,8 @@ import static online.vaionyx.skillcert.certification.CertificationDtos.*;
 
 @Service
 public class CertificationService {
-  private final CertificationRepository certifications; private final QuestionRepository questions; private final QuestionOptionRepository options; private final AttemptRepository attempts; private final AttemptAuditRepository attemptAudits;
-  public CertificationService(CertificationRepository certifications, QuestionRepository questions, QuestionOptionRepository options, AttemptRepository attempts, AttemptAuditRepository attemptAudits) { this.certifications=certifications; this.questions=questions; this.options=options; this.attempts=attempts; this.attemptAudits=attemptAudits; }
+  private final CertificationRepository certifications; private final QuestionRepository questions; private final QuestionOptionRepository options; private final AttemptRepository attempts; private final AttemptAuditRepository attemptAudits; private final PaymentRecoveryService recovery; private final PaymentRepository payments;
+  public CertificationService(CertificationRepository certifications, QuestionRepository questions, QuestionOptionRepository options, AttemptRepository attempts, AttemptAuditRepository attemptAudits, PaymentRecoveryService recovery, PaymentRepository payments) { this.certifications=certifications; this.questions=questions; this.options=options; this.attempts=attempts; this.attemptAudits=attemptAudits; this.recovery=recovery; this.payments=payments; }
   public List<CertificationSummary> list() { return certifications.findByPublishedTrueOrderByTitleAsc().stream().map(this::summary).toList(); }
   public Assessment assessment(String slug) {
     Certification certification = active(slug); List<Question> questionList = questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId());
@@ -34,6 +37,21 @@ public class CertificationService {
     String mobileDigits = request.mobile().replaceAll("\\D", "");
     if (mobileDigits.length() < 10) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter a valid mobile number");
     attempt.setContactDetails(request.email().trim().toLowerCase(Locale.ROOT), request.mobile().trim());
+  }
+  @Transactional(readOnly = true)
+  public RecoveryAttempt recover(String token) {
+    PaymentRecoveryEmail reminder = recovery.requireByToken(token);
+    Attempt attempt = reminder.getAttempt();
+    if (payments.existsByAttemptIdAndStatus(attempt.getId(), "CAPTURED")) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Your certificate has already been issued");
+    }
+    int passingScore = attempt.getCertification().getPassingScore();
+    return new RecoveryAttempt(
+        attempt.getCertification().getSlug(),
+        attempt.getRecipientName(),
+        attempt.getRecipientEmail(),
+        attempt.getRecipientMobile(),
+        new AttemptResult(attempt.getId(), attempt.isPassed(), attempt.getScore(), attempt.getTotalQuestions(), passingScore, "PAYMENT_REQUIRED", attempt.getOfferedPricePaise(), attempt.getPriceVariant()));
   }
   @Transactional
   public void saveAudit(UUID attemptId, SaveAttemptAudit request) {

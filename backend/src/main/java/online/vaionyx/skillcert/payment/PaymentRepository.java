@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
   Optional<Payment> findByAttemptId(UUID attemptId);
   Optional<Payment> findByRazorpayOrderId(String razorpayOrderId);
+  boolean existsByAttemptIdAndStatus(UUID attemptId, String status);
 }

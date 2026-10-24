@@ -12,6 +12,7 @@ public class CertificationController {
   @GetMapping public List<CertificationSummary> list() { return service.list(); }
   @GetMapping("/{slug}/assessment") public Assessment assessment(@PathVariable String slug) { return service.assessment(slug); }
   @PostMapping("/{slug}/attempts") public AttemptResult submit(@PathVariable String slug, @Valid @RequestBody SubmitAttempt request) { return service.submit(slug, request); }
+  @GetMapping("/recovery/{token}") public RecoveryAttempt recover(@PathVariable String token) { return service.recover(token); }
   @PostMapping("/attempts/{attemptId}/contact") public void saveContact(@PathVariable java.util.UUID attemptId, @Valid @RequestBody SaveContact request) { service.saveContact(attemptId, request); }
   @PostMapping("/attempts/{attemptId}/audit") public void saveAudit(@PathVariable java.util.UUID attemptId, @Valid @RequestBody SaveAttemptAudit request) { service.saveAudit(attemptId, request); }
 }

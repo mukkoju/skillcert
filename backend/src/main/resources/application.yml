@@ -20,6 +20,8 @@ management:
         include: health,info
 app:
   cors-origin: ${CORS_ORIGIN:http://localhost:5173}
+  public-web-url: ${PUBLIC_WEB_URL:https://skillcert.vaionyxsolutions.online}
+  payment-recovery-enabled: ${PAYMENT_RECOVERY_ENABLED:false}
   certificate-verification-base-url: ${CERTIFICATE_VERIFICATION_BASE_URL:https://skillcert.vaionyxsolutions.online/verify/}
   razorpay-key-id: ${RAZORPAY_KEY_ID:}
   razorpay-key-secret: ${RAZORPAY_KEY_SECRET:}

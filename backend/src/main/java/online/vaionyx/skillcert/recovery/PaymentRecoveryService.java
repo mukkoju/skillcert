@@ -60,7 +60,7 @@ public class PaymentRecoveryService {
     this.enabled = enabled;
   }
 
-  @Scheduled(fixedDelayString = "PT5M", initialDelayString = "PT1M")
+  @Scheduled(fixedDelayString = "PT1M", initialDelayString = "PT1M")
   public void sendDueReminders() {
     if (!enabled || apiKey.isBlank() || fromEmail.isBlank()) return;
     Instant recoveryStartedAt = settings.findById((short) 1)

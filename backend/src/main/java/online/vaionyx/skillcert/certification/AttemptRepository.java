@@ -3,11 +3,13 @@ package online.vaionyx.skillcert.certification;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
+  @EntityGraph(attributePaths = "certification")
   @Query("""
       select a from Attempt a
       where a.passed = true

@@ -17,12 +17,19 @@ public class CertificationService {
   public CertificationService(CertificationRepository certifications, QuestionRepository questions, QuestionOptionRepository options, AttemptRepository attempts, AttemptAuditRepository attemptAudits, PaymentRecoveryService recovery, PaymentRepository payments) { this.certifications=certifications; this.questions=questions; this.options=options; this.attempts=attempts; this.attemptAudits=attemptAudits; this.recovery=recovery; this.payments=payments; }
   public List<CertificationSummary> list() { return certifications.findByPublishedTrueOrderByTitleAsc().stream().map(this::summary).toList(); }
   public Assessment assessment(String slug) {
-    Certification certification = active(slug); List<Question> questionList = questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId());
+    Certification certification = active(slug); List<Question> questionList = assessmentQuestions(certification);
     return new Assessment(certification.getSlug(), certification.getTitle(), certification.getQuestionCount(), certification.getPassingScore(), questionList.stream().map(q -> new AssessmentQuestion(q.getId(), q.getPrompt(), q.getTheory(), q.getTopic(), q.getDifficulty(), q.getAskedByCompany(), q.getCodeSnippet(), options.findByQuestionIdOrderByPositionAsc(q.getId()).stream().map(o -> new Option(o.getId(), o.getLabel())).toList())).toList());
   }
   public AttemptResult submit(String slug, SubmitAttempt request) {
     Certification certification = active(slug); Map<UUID, UUID> supplied = new HashMap<>(); request.answers().forEach(a -> supplied.put(a.questionId(), a.optionId()));
-    List<Question> questionList = questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId()); int score = 0;
+    List<Question> questionList = questions.findByIdInAndCertificationIdAndPublishedTrue(supplied.keySet(), certification.getId());
+    if (questionList.size() != certification.getQuestionCount() || supplied.size() != certification.getQuestionCount()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complete every assessment question before submitting");
+    }
+    if ("spring-boot-foundations".equals(certification.getSlug()) && !hasSpringBootMix(questionList)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Submit the complete Spring Boot assessment question set");
+    }
+    int score = 0;
     for (Question q : questionList) { UUID optionId = supplied.get(q.getId()); if (optionId != null && options.findByIdAndQuestionId(optionId, q.getId()).map(QuestionOption::isCorrect).orElse(false)) score++; }
     boolean passed = score >= certification.getPassingScore();
     boolean variantA = certification.isPriceExperimentEnabled() && ThreadLocalRandom.current().nextBoolean();
@@ -60,5 +67,20 @@ public class CertificationService {
     attemptAudits.save(new AttemptAudit(attempt, request));
   }
   private Certification active(String slug) { return certifications.findBySlugAndPublishedTrue(slug).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found")); }
+  private List<Question> assessmentQuestions(Certification certification) {
+    if (!"spring-boot-foundations".equals(certification.getSlug())) return questions.findByCertificationIdAndPublishedTrueOrderByPositionAsc(certification.getId());
+    List<Question> selected = new ArrayList<>();
+    selected.addAll(questions.pickRandomByDifficulty(certification.getId(), "Level 1", 3));
+    selected.addAll(questions.pickRandomByDifficulty(certification.getId(), "Level 2", 4));
+    selected.addAll(questions.pickRandomByDifficulty(certification.getId(), "Level 3", 3));
+    if (selected.size() != 10) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Spring Boot assessment question bank is unavailable");
+    Collections.shuffle(selected);
+    return selected;
+  }
+  private boolean hasSpringBootMix(List<Question> questionList) {
+    return questionList.stream().filter(q -> "Level 1".equals(q.getDifficulty())).count() == 3
+        && questionList.stream().filter(q -> "Level 2".equals(q.getDifficulty())).count() == 4
+        && questionList.stream().filter(q -> "Level 3".equals(q.getDifficulty())).count() == 3;
+  }
   private CertificationSummary summary(Certification c) { return new CertificationSummary(c.getSlug(),c.getTitle(),c.getDescription(),c.getDurationMinutes(),c.getQuestionCount(),c.getPassingScore(),c.getPricePaise(),c.getCategory()); }
 }

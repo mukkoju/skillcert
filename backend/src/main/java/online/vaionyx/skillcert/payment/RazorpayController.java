@@ -18,7 +18,7 @@ public class RazorpayController {
 
   @PostMapping("/orders")
   public ResponseEntity<PaymentDtos.CheckoutOrder> order(@Valid @RequestBody PaymentDtos.CreateOrderRequest request) {
-    return ResponseEntity.status(HttpStatus.CREATED).body(payments.createOrder(request.attemptId()));
+    return ResponseEntity.status(HttpStatus.CREATED).body(payments.createOrder(request));
   }
   @PostMapping("/verify")
   public CertificateDtos.CertificateDetails verify(@Valid @RequestBody PaymentDtos.VerifyPaymentRequest request) { return payments.verifyCheckout(request); }

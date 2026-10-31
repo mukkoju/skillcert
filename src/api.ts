@@ -40,8 +40,10 @@ export async function loadRecoveryAttempt(token: string): Promise<RecoveryAttemp
   return response.json()
 }
 
-export async function createRazorpayOrder(attemptId: string): Promise<RazorpayOrder> {
-  const response = await fetch(`${apiBase}/payments/razorpay/orders`, { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify({ attemptId }) })
+export type CertificatePackage = 'DIGITAL' | 'PRINTED_SINGLE' | 'PRINTED_SEVEN'
+
+export async function createRazorpayOrder(attemptId: string, packageType: CertificatePackage = 'DIGITAL', shippingAddress?: string, certificationSlugs?: string[]): Promise<RazorpayOrder> {
+  const response = await fetch(`${apiBase}/payments/razorpay/orders`, { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify({ attemptId, packageType, shippingAddress, certificationSlugs }) })
   if (!response.ok) throw new Error('Unable to start secure payment.')
   return response.json()
 }

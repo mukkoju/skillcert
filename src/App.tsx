@@ -166,7 +166,7 @@ export default function App() {
   const [startCountdown, setStartCountdown] = useState(3)
   const [showQuizLaunch, setShowQuizLaunch] = useState(false)
   const [analysisCount, setAnalysisCount] = useState(0)
-  const [offerTimerSeconds, setOfferTimerSeconds] = useState(120)
+  const [offerTimerSeconds, setOfferTimerSeconds] = useState(600)
   const [showCelebration, setShowCelebration] = useState(false)
   const [musicMuted, setMusicMuted] = useState(false)
   const [resultHeadlineVariant] = useState(() => Math.random() > .5)
@@ -494,7 +494,7 @@ export default function App() {
   }, [attemptResult, previewScreen, step])
   useEffect(() => {
     if (step !== 'result' || !attemptResult?.passed) return
-    setOfferTimerSeconds(120)
+    setOfferTimerSeconds(600)
     const timer = window.setInterval(() => {
       setOfferTimerSeconds(seconds => {
         if (seconds <= 1) {

@@ -134,7 +134,7 @@
 .certificate-cta{font-size:14px}.certificate-cta-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .offer-price s{display:block}
 .input input{font-size:14px}
-.offer-certificate>img{filter:blur(1px)}
+.offer-certificate>img{filter:blur(7px)}
 .offer-reservation{margin:0;font-size:10px}
 .celebration-confetti{position:absolute;inset:0;z-index:4;width:100%;height:54%;pointer-events:none}
 
